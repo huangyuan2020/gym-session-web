@@ -70,15 +70,27 @@
           <div class="current-inputs">
             <label>
               <span>次数</span>
-              <input id="currentReps" type="number" inputmode="numeric" min="0" step="1" />
+              <div class="stepper" data-stepper="reps">
+                <button class="step-button" type="button" data-step-target="reps" data-step-dir="-1" aria-label="次数减一">−</button>
+                <input id="currentReps" type="number" inputmode="numeric" min="0" step="1" />
+                <button class="step-button" type="button" data-step-target="reps" data-step-dir="1" aria-label="次数加一">+</button>
+              </div>
             </label>
             <label>
               <span>重量 kg</span>
-              <input id="currentWeight" type="number" inputmode="decimal" min="0" step="0.5" />
+              <div class="stepper" data-stepper="weight">
+                <button class="step-button" type="button" data-step-target="weight" data-step-dir="-1" aria-label="重量减少">−</button>
+                <input id="currentWeight" type="number" inputmode="decimal" min="0" step="1" />
+                <button class="step-button" type="button" data-step-target="weight" data-step-dir="1" aria-label="重量增加">+</button>
+              </div>
             </label>
             <label>
               <span>休息 秒</span>
-              <input id="currentRest" type="number" inputmode="numeric" min="0" step="5" />
+              <div class="stepper" data-stepper="restSec">
+                <button class="step-button" type="button" data-step-target="restSec" data-step-dir="-1" aria-label="休息减少十五秒">−</button>
+                <input id="currentRest" type="number" inputmode="numeric" min="0" step="15" />
+                <button class="step-button" type="button" data-step-target="restSec" data-step-dir="1" aria-label="休息增加十五秒">+</button>
+              </div>
             </label>
           </div>
 

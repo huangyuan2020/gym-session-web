@@ -323,6 +323,52 @@ input {
   font-weight: 760;
 }
 
+.stepper {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #cbd6cc;
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.stepper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(31, 111, 74, 0.16);
+}
+
+.stepper input {
+  height: 44px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper input:focus {
+  box-shadow: none;
+}
+
+.step-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 44px;
+  border-radius: 0;
+  background: #f1f5ef;
+  color: var(--primary);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.step-button:active {
+  background: #e3ebe0;
+}
+
 input:focus,
 textarea:focus {
   border-color: var(--primary);
@@ -685,7 +731,7 @@ textarea {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 50;
   display: grid;
   align-items: end;
   padding: 16px 12px calc(env(safe-area-inset-bottom) + 12px);
@@ -857,6 +903,14 @@ textarea {
 
   input {
     height: 42px;
+  }
+
+  .stepper input {
+    height: 40px;
+  }
+
+  .step-button {
+    height: 40px;
   }
 
   .primary-action {
@@ -1062,15 +1116,27 @@ textarea {
           <div class="current-inputs">
             <label>
               <span>次数</span>
-              <input id="currentReps" type="number" inputmode="numeric" min="0" step="1" />
+              <div class="stepper" data-stepper="reps">
+                <button class="step-button" type="button" data-step-target="reps" data-step-dir="-1" aria-label="次数减一">−</button>
+                <input id="currentReps" type="number" inputmode="numeric" min="0" step="1" />
+                <button class="step-button" type="button" data-step-target="reps" data-step-dir="1" aria-label="次数加一">+</button>
+              </div>
             </label>
             <label>
               <span>重量 kg</span>
-              <input id="currentWeight" type="number" inputmode="decimal" min="0" step="0.5" />
+              <div class="stepper" data-stepper="weight">
+                <button class="step-button" type="button" data-step-target="weight" data-step-dir="-1" aria-label="重量减少">−</button>
+                <input id="currentWeight" type="number" inputmode="decimal" min="0" step="1" />
+                <button class="step-button" type="button" data-step-target="weight" data-step-dir="1" aria-label="重量增加">+</button>
+              </div>
             </label>
             <label>
               <span>休息 秒</span>
-              <input id="currentRest" type="number" inputmode="numeric" min="0" step="5" />
+              <div class="stepper" data-stepper="restSec">
+                <button class="step-button" type="button" data-step-target="restSec" data-step-dir="-1" aria-label="休息减少十五秒">−</button>
+                <input id="currentRest" type="number" inputmode="numeric" min="0" step="15" />
+                <button class="step-button" type="button" data-step-target="restSec" data-step-dir="1" aria-label="休息增加十五秒">+</button>
+              </div>
             </label>
           </div>
 
@@ -1268,6 +1334,7 @@ textarea {
     history: [],
     editor: { mode: "add", exerciseId: null },
     lastRecord: null,
+    reopenQueueAfterEdit: false,
   };
 
   function uid(prefix) {
@@ -1311,6 +1378,17 @@ textarea {
 
   function cleanText(value) {
     return String(value || "").trim();
+  }
+
+  function isDumbbellExercise(exercise) {
+    return /哑铃|dumbbell|db/i.test(exercise?.name || "");
+  }
+
+  function currentStepFor(field, exercise = getCurrentExercise()) {
+    if (field === "reps") return 1;
+    if (field === "restSec") return 15;
+    if (field === "weight") return isDumbbellExercise(exercise) ? 1 : 5;
+    return 1;
   }
 
   function escapeHtml(value) {
@@ -1721,6 +1799,8 @@ textarea {
 
   function openExerciseEditor(mode, exerciseId = null) {
     state.editor = { mode, exerciseId };
+    state.reopenQueueAfterEdit = $("queueSection")?.classList.contains("sheet-open") || false;
+    closePanels();
     const exercise = state.session.plan.find((item) => item.id === exerciseId);
     $("exerciseFormTitle").textContent = mode === "edit" ? "编辑动作" : "添加动作";
     $("exerciseNameInput").value = exercise?.name || "";
@@ -1734,8 +1814,11 @@ textarea {
   }
 
   function closeExerciseEditor() {
+    const shouldReopenQueue = state.reopenQueueAfterEdit;
     $("exerciseSheet").classList.add("hidden");
     $("exerciseSheet").setAttribute("aria-hidden", "true");
+    state.reopenQueueAfterEdit = false;
+    if (shouldReopenQueue) openPanel("queue");
   }
 
   function saveExerciseFromForm(event) {
@@ -1761,14 +1844,21 @@ textarea {
       const next = { ...exercise, id: uid("ex"), sourceId: null };
       const currentIndex = state.session.plan.findIndex((item) => item.id === state.session.currentExerciseId);
       state.session.plan.splice(currentIndex >= 0 ? currentIndex + 1 : state.session.plan.length, 0, next);
-      if (!state.session.currentExerciseId) state.session.currentExerciseId = next.id;
+      if (!state.session.currentExerciseId || state.session.phase === "done") {
+        state.session.currentExerciseId = next.id;
+        state.session.phase = "ready";
+      }
       hydrateDraft(true);
     }
 
     ensurePointer();
     saveSession();
-    closeExerciseEditor();
+    const shouldReopenQueue = state.reopenQueueAfterEdit;
+    $("exerciseSheet").classList.add("hidden");
+    $("exerciseSheet").setAttribute("aria-hidden", "true");
+    state.reopenQueueAfterEdit = false;
     renderAll();
+    if (shouldReopenQueue) openPanel("queue");
   }
 
   function updateCurrentDraft(field, rawValue) {
@@ -1789,6 +1879,20 @@ textarea {
     saveSession();
     renderQueue();
     updateDynamicTimers();
+  }
+
+  function stepCurrentDraft(field, direction) {
+    const exercise = getCurrentExercise();
+    if (!exercise) return;
+    hydrateDraft(false);
+
+    const dir = direction < 0 ? -1 : 1;
+    const integer = field !== "weight";
+    const fallback = state.session.currentDraft[field] ?? exercise[field] ?? 0;
+    const step = currentStepFor(field, exercise);
+    const value = cleanNumber(cleanNumber(fallback, 0, integer) + dir * step, 0, integer);
+    updateCurrentDraft(field, value);
+    renderCurrent();
   }
 
   function savePlanAsTemplate() {
@@ -1985,6 +2089,7 @@ textarea {
     $("currentReps").value = draft?.reps ?? exercise.reps;
     $("currentWeight").value = draft?.weight ?? exercise.weight;
     $("currentRest").value = draft?.restSec ?? exercise.restSec;
+    $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
     secondary.disabled = false;
     finish.disabled = false;
@@ -2215,6 +2320,11 @@ textarea {
     $("currentReps").addEventListener("input", (event) => updateCurrentDraft("reps", event.target.value));
     $("currentWeight").addEventListener("input", (event) => updateCurrentDraft("weight", event.target.value));
     $("currentRest").addEventListener("input", (event) => updateCurrentDraft("restSec", event.target.value));
+    document.querySelectorAll("[data-step-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        stepCurrentDraft(button.dataset.stepTarget, Number(button.dataset.stepDir || 1));
+      });
+    });
 
     $("exerciseList").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");

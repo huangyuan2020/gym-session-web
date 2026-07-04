@@ -35,6 +35,7 @@
     history: [],
     editor: { mode: "add", exerciseId: null },
     lastRecord: null,
+    reopenQueueAfterEdit: false,
   };
 
   function uid(prefix) {
@@ -78,6 +79,17 @@
 
   function cleanText(value) {
     return String(value || "").trim();
+  }
+
+  function isDumbbellExercise(exercise) {
+    return /哑铃|dumbbell|db/i.test(exercise?.name || "");
+  }
+
+  function currentStepFor(field, exercise = getCurrentExercise()) {
+    if (field === "reps") return 1;
+    if (field === "restSec") return 15;
+    if (field === "weight") return isDumbbellExercise(exercise) ? 1 : 5;
+    return 1;
   }
 
   function escapeHtml(value) {
@@ -488,6 +500,8 @@
 
   function openExerciseEditor(mode, exerciseId = null) {
     state.editor = { mode, exerciseId };
+    state.reopenQueueAfterEdit = $("queueSection")?.classList.contains("sheet-open") || false;
+    closePanels();
     const exercise = state.session.plan.find((item) => item.id === exerciseId);
     $("exerciseFormTitle").textContent = mode === "edit" ? "编辑动作" : "添加动作";
     $("exerciseNameInput").value = exercise?.name || "";
@@ -501,8 +515,11 @@
   }
 
   function closeExerciseEditor() {
+    const shouldReopenQueue = state.reopenQueueAfterEdit;
     $("exerciseSheet").classList.add("hidden");
     $("exerciseSheet").setAttribute("aria-hidden", "true");
+    state.reopenQueueAfterEdit = false;
+    if (shouldReopenQueue) openPanel("queue");
   }
 
   function saveExerciseFromForm(event) {
@@ -528,14 +545,21 @@
       const next = { ...exercise, id: uid("ex"), sourceId: null };
       const currentIndex = state.session.plan.findIndex((item) => item.id === state.session.currentExerciseId);
       state.session.plan.splice(currentIndex >= 0 ? currentIndex + 1 : state.session.plan.length, 0, next);
-      if (!state.session.currentExerciseId) state.session.currentExerciseId = next.id;
+      if (!state.session.currentExerciseId || state.session.phase === "done") {
+        state.session.currentExerciseId = next.id;
+        state.session.phase = "ready";
+      }
       hydrateDraft(true);
     }
 
     ensurePointer();
     saveSession();
-    closeExerciseEditor();
+    const shouldReopenQueue = state.reopenQueueAfterEdit;
+    $("exerciseSheet").classList.add("hidden");
+    $("exerciseSheet").setAttribute("aria-hidden", "true");
+    state.reopenQueueAfterEdit = false;
     renderAll();
+    if (shouldReopenQueue) openPanel("queue");
   }
 
   function updateCurrentDraft(field, rawValue) {
@@ -556,6 +580,20 @@
     saveSession();
     renderQueue();
     updateDynamicTimers();
+  }
+
+  function stepCurrentDraft(field, direction) {
+    const exercise = getCurrentExercise();
+    if (!exercise) return;
+    hydrateDraft(false);
+
+    const dir = direction < 0 ? -1 : 1;
+    const integer = field !== "weight";
+    const fallback = state.session.currentDraft[field] ?? exercise[field] ?? 0;
+    const step = currentStepFor(field, exercise);
+    const value = cleanNumber(cleanNumber(fallback, 0, integer) + dir * step, 0, integer);
+    updateCurrentDraft(field, value);
+    renderCurrent();
   }
 
   function savePlanAsTemplate() {
@@ -752,6 +790,7 @@
     $("currentReps").value = draft?.reps ?? exercise.reps;
     $("currentWeight").value = draft?.weight ?? exercise.weight;
     $("currentRest").value = draft?.restSec ?? exercise.restSec;
+    $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
     secondary.disabled = false;
     finish.disabled = false;
@@ -982,6 +1021,11 @@
     $("currentReps").addEventListener("input", (event) => updateCurrentDraft("reps", event.target.value));
     $("currentWeight").addEventListener("input", (event) => updateCurrentDraft("weight", event.target.value));
     $("currentRest").addEventListener("input", (event) => updateCurrentDraft("restSec", event.target.value));
+    document.querySelectorAll("[data-step-target]").forEach((button) => {
+      button.addEventListener("click", () => {
+        stepCurrentDraft(button.dataset.stepTarget, Number(button.dataset.stepDir || 1));
+      });
+    });
 
     $("exerciseList").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
