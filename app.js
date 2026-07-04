@@ -38,7 +38,9 @@
     lastRecord: null,
     reopenQueueAfterEdit: false,
     queuePointer: null,
+    historyPointer: null,
     suppressQueueClickUntil: 0,
+    suppressHistoryClickUntil: 0,
   };
 
   function uid(prefix) {
@@ -183,6 +185,22 @@
 
   function saveTemplate() {
     saveJson(STORE.template, state.template);
+  }
+
+  function syncTemplateFromSession() {
+    state.template = {
+      name: state.session.templateName || state.template?.name || "全身力量 A",
+      updatedAt: isoNow(),
+      exercises: state.session.plan.map((exercise) => ({
+        id: exercise.sourceId || exercise.id || uid("tpl"),
+        name: exercise.name,
+        sets: cleanNumber(exercise.sets, 1, true),
+        reps: cleanNumber(exercise.reps, 0, true),
+        weight: cleanNumber(exercise.weight, 0),
+        restSec: cleanNumber(exercise.restSec, 60, true),
+      })),
+    };
+    saveTemplate();
   }
 
   function saveHistory() {
@@ -475,17 +493,13 @@
     };
   }
 
-  function moveExercise(exerciseId, direction) {
-    const index = state.session.plan.findIndex((exercise) => exercise.id === exerciseId);
-    moveExerciseToIndex(exerciseId, index + direction);
-  }
-
   function moveExerciseToIndex(exerciseId, nextIndex) {
     const index = state.session.plan.findIndex((exercise) => exercise.id === exerciseId);
     const boundedIndex = Math.max(0, Math.min(state.session.plan.length - 1, nextIndex));
     if (index < 0 || boundedIndex < 0 || index === boundedIndex) return;
     const [item] = state.session.plan.splice(index, 1);
     state.session.plan.splice(boundedIndex, 0, item);
+    syncTemplateFromSession();
     saveSession();
     renderAll();
   }
@@ -505,14 +519,7 @@
       hydrateDraft(true);
     }
     ensurePointer();
-    saveSession();
-    renderAll();
-  }
-
-  function incrementPlannedSet(exerciseId) {
-    const exercise = state.session.plan.find((item) => item.id === exerciseId);
-    if (!exercise) return;
-    exercise.sets = cleanNumber(exercise.sets, 1, true) + 1;
+    syncTemplateFromSession();
     saveSession();
     renderAll();
   }
@@ -572,6 +579,7 @@
     }
 
     ensurePointer();
+    syncTemplateFromSession();
     saveSession();
     const shouldReopenQueue = state.reopenQueueAfterEdit;
     $("exerciseSheet").classList.add("hidden");
@@ -596,6 +604,7 @@
     if (field === "weight") exercise.weight = value;
     if (field === "restSec") exercise.restSec = value;
 
+    syncTemplateFromSession();
     saveSession();
     renderQueue();
     updateDynamicTimers();
@@ -613,35 +622,6 @@
     const value = cleanNumber(cleanNumber(fallback, 0, integer) + dir * step, 0, integer);
     updateCurrentDraft(field, value);
     renderCurrent();
-  }
-
-  function savePlanAsTemplate() {
-    state.template = {
-      name: state.session.templateName || "全身力量 A",
-      updatedAt: isoNow(),
-      exercises: state.session.plan.map((exercise) => ({
-        id: uid("tpl"),
-        name: exercise.name,
-        sets: cleanNumber(exercise.sets, 1, true),
-        reps: cleanNumber(exercise.reps, 0, true),
-        weight: cleanNumber(exercise.weight, 0),
-        restSec: cleanNumber(exercise.restSec, 60, true),
-      })),
-    };
-    saveTemplate();
-    flashButton($("saveTemplate"), "已保存");
-  }
-
-  function resetTemplateAndSession() {
-    const hasWork = state.session.sets.length > 0 || state.session.phase === "work" || state.session.phase === "rest";
-    if (hasWork && !window.confirm("重置会换回预置课表，并清掉当前未完成训练。")) return;
-    state.template = deepClone(DEFAULT_TEMPLATE);
-    state.session = createSessionFromTemplate(state.template);
-    saveTemplate();
-    saveSession();
-    state.lastRecord = null;
-    $("recordSection").classList.add("hidden");
-    renderAll();
   }
 
   function startNewSession() {
@@ -967,7 +947,11 @@
       closeSwipedRows(pointer.mode === "swipe" ? pointer.row : null);
       pointer.row.classList.remove("drag-armed");
       pointer.row.classList.add(pointer.mode === "swipe" ? "swiping" : "dragging");
-      card.style.transition = "none";
+      if (pointer.mode === "swipe") {
+        card.style.transition = "none";
+      } else {
+        pointer.row.style.transition = "none";
+      }
     }
 
     if (pointer.mode === "swipe") {
@@ -979,7 +963,7 @@
     }
 
     event.preventDefault();
-    card.style.transform = `translateY(${dy}px)`;
+    pointer.row.style.transform = `translateY(${dy}px)`;
   }
 
   function moveQueuePointer(event) {
@@ -1000,6 +984,8 @@
       card.style.transition = "";
       card.style.transform = "";
     }
+    pointer.row.style.transition = "";
+    pointer.row.style.transform = "";
 
     if (pointer.mode === "swipe") {
       const shouldOpen = pointer.opened ? dx < 28 : dx < -42;
@@ -1031,6 +1017,8 @@
       card.style.transition = "";
       card.style.transform = "";
     }
+    pointer.row.style.transition = "";
+    pointer.row.style.transform = "";
     state.queuePointer = null;
   }
 
@@ -1376,15 +1364,157 @@
       .map(
         (record) => `
           <article class="history-row" data-id="${record.id}">
-            <div>
+            <div class="swipe-actions" aria-hidden="true">
+              <button class="swipe-action delete" type="button" data-action="delete-history">删除</button>
+            </div>
+            <button class="history-card" type="button" data-action="view-history">
               <strong>${escapeHtml(formatDateTime(record.startedAt))} · ${escapeHtml(record.title || "力量训练")}</strong>
               <span>${record.totalSets}组 · ${record.totalVolumeKg}kg · ${formatClock(record.totalDurationSec)}</span>
-            </div>
-            <button class="secondary-action" type="button" data-action="view-history">查看</button>
+            </button>
           </article>
         `,
       )
       .join("");
+  }
+
+  function deleteHistoryRecord(recordId) {
+    const before = state.history.length;
+    state.history = state.history.filter((record) => record.id !== recordId);
+    if (state.history.length === before) return;
+    if (state.lastRecord?.id === recordId) {
+      state.lastRecord = null;
+      closePanel("record", true);
+    }
+    saveHistory();
+    renderAll();
+    openPanel("history");
+  }
+
+  function closeSwipedHistoryRows(exceptRow = null) {
+    document.querySelectorAll(".history-row.swiped").forEach((row) => {
+      if (row === exceptRow) return;
+      row.classList.remove("swiped");
+      const card = row.querySelector(".history-card");
+      if (card) card.style.transform = "";
+    });
+  }
+
+  function beginHistoryGesture(event, pointerId, clientX, clientY, pointerType = "touch", button = 0) {
+    if (state.historyPointer) return;
+    if (pointerType === "mouse" && button !== 0) return;
+    if (event.target.closest(".swipe-actions button")) return;
+    const row = event.target.closest(".history-row");
+    if (!row) return;
+    state.historyPointer = {
+      row,
+      id: row.dataset.id,
+      pointerId,
+      startX: clientX,
+      startY: clientY,
+      mode: null,
+      opened: row.classList.contains("swiped"),
+    };
+    if (Number.isFinite(pointerId)) row.setPointerCapture?.(pointerId);
+  }
+
+  function moveHistoryGesture(event, pointerId, clientX, clientY) {
+    const pointer = state.historyPointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".history-card");
+    if (!card) return;
+    const dx = clientX - pointer.startX;
+    const dy = clientY - pointer.startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (!pointer.mode) {
+      if (Math.max(absX, absY) < 8) return;
+      if (absX <= absY * 1.15) return;
+      pointer.mode = "swipe";
+      closeSwipedHistoryRows(pointer.row);
+      pointer.row.classList.add("swiping");
+      card.style.transition = "none";
+    }
+
+    event.preventDefault();
+    const base = pointer.opened ? -72 : 0;
+    const offset = Math.max(-72, Math.min(16, base + dx));
+    card.style.transform = `translateX(${offset > 0 ? offset * 0.25 : offset}px)`;
+  }
+
+  function finishHistoryGesture(event, pointerId, clientX) {
+    const pointer = state.historyPointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".history-card");
+    const dx = clientX - pointer.startX;
+    if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
+    pointer.row.classList.remove("swiping");
+    if (card) {
+      card.style.transition = "";
+      card.style.transform = "";
+    }
+
+    if (pointer.mode === "swipe") {
+      const shouldOpen = pointer.opened ? dx < 28 : dx < -42;
+      pointer.row.classList.toggle("swiped", shouldOpen);
+      state.suppressHistoryClickUntil = Date.now() + 350;
+    }
+    state.historyPointer = null;
+  }
+
+  function cancelHistoryGesture(pointerId) {
+    const pointer = state.historyPointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".history-card");
+    if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
+    pointer.row.classList.remove("swiping");
+    if (card) {
+      card.style.transition = "";
+      card.style.transform = "";
+    }
+    state.historyPointer = null;
+  }
+
+  function beginHistoryPointer(event) {
+    beginHistoryGesture(event, event.pointerId, event.clientX, event.clientY, event.pointerType, event.button);
+  }
+
+  function moveHistoryPointer(event) {
+    moveHistoryGesture(event, event.pointerId, event.clientX, event.clientY);
+  }
+
+  function finishHistoryPointer(event) {
+    finishHistoryGesture(event, event.pointerId, event.clientX);
+  }
+
+  function beginHistoryMouse(event) {
+    beginHistoryGesture(event, "history-mouse", event.clientX, event.clientY, "mouse", event.button);
+  }
+
+  function moveHistoryMouse(event) {
+    moveHistoryGesture(event, "history-mouse", event.clientX, event.clientY);
+  }
+
+  function finishHistoryMouse(event) {
+    finishHistoryGesture(event, "history-mouse", event.clientX);
+  }
+
+  function beginHistoryTouch(event) {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    beginHistoryGesture(event, "history-touch", touch.clientX, touch.clientY, "touch", 0);
+  }
+
+  function moveHistoryTouch(event) {
+    if (!event.touches.length) return;
+    const touch = event.touches[0];
+    moveHistoryGesture(event, "history-touch", touch.clientX, touch.clientY);
+  }
+
+  function finishHistoryTouch(event) {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    finishHistoryGesture(event, "history-touch", touch.clientX);
   }
 
   function updateDynamicTimers() {
@@ -1609,8 +1739,6 @@
       const action = button.dataset.action;
       if (!id) return;
 
-      if (action === "up") moveExercise(id, -1);
-      if (action === "down") moveExercise(id, 1);
       if (action === "edit") {
         if (row.classList.contains("swiped")) {
           closeSwipedRows();
@@ -1625,8 +1753,6 @@
       }
     });
 
-    $("saveTemplate").addEventListener("click", savePlanAsTemplate);
-    $("resetTemplate").addEventListener("click", resetTemplateAndSession);
     $("copyRecord").addEventListener("click", copyRecord);
     $("exportBackup").addEventListener("click", exportAllBackup);
     $("exportCsv").addEventListener("click", exportAnalysisCsv);
@@ -1641,15 +1767,44 @@
       else openPanel("history");
     });
 
+    $("historyList").addEventListener("pointerdown", beginHistoryPointer);
+    $("historyList").addEventListener("pointermove", moveHistoryPointer, { passive: false });
+    $("historyList").addEventListener("pointerup", finishHistoryPointer);
+    $("historyList").addEventListener("pointercancel", (event) => cancelHistoryGesture(event.pointerId));
+    $("historyList").addEventListener("mousedown", beginHistoryMouse);
+    document.addEventListener("mousemove", moveHistoryMouse);
+    document.addEventListener("mouseup", finishHistoryMouse);
+    $("historyList").addEventListener("touchstart", beginHistoryTouch, { passive: true });
+    $("historyList").addEventListener("touchmove", moveHistoryTouch, { passive: false });
+    $("historyList").addEventListener("touchend", finishHistoryTouch);
+    $("historyList").addEventListener("touchcancel", () => cancelHistoryGesture("history-touch"));
     $("historyList").addEventListener("click", (event) => {
-      const button = event.target.closest("button[data-action='view-history']");
+      const button = event.target.closest("button[data-action]");
       if (!button) return;
+      if (Date.now() < state.suppressHistoryClickUntil && button.dataset.action !== "delete-history") {
+        event.preventDefault();
+        return;
+      }
       const id = event.target.closest(".history-row")?.dataset.id;
-      const record = state.history.find((item) => item.id === id);
-      if (!record) return;
-      state.lastRecord = record;
-      renderRecord(record);
-      openPanel("record");
+      if (!id) return;
+      if (button.dataset.action === "delete-history") {
+        closeSwipedHistoryRows();
+        deleteHistoryRecord(id);
+        return;
+      }
+      if (button.dataset.action === "view-history") {
+        const row = event.target.closest(".history-row");
+        if (row.classList.contains("swiped")) {
+          closeSwipedHistoryRows();
+          return;
+        }
+        closeSwipedHistoryRows();
+        const record = state.history.find((item) => item.id === id);
+        if (!record) return;
+        state.lastRecord = record;
+        renderRecord(record);
+        openPanel("record");
+      }
     });
 
     $("clearHistory").addEventListener("click", () => {

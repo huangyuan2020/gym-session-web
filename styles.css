@@ -177,7 +177,6 @@ svg {
 
 .panel-kicker,
 .section-heading,
-.template-actions,
 .record-actions {
   display: flex;
   align-items: center;
@@ -514,6 +513,9 @@ textarea:focus {
   background: #f3f1ed;
   touch-action: pan-y;
   user-select: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .exercise-card {
@@ -620,8 +622,8 @@ textarea:focus {
   z-index: 5;
 }
 
-.exercise-row.drag-armed .exercise-card,
-.exercise-row.dragging .exercise-card {
+.exercise-row.drag-armed,
+.exercise-row.dragging {
   box-shadow: 0 14px 30px rgba(30, 35, 30, 0.18);
 }
 
@@ -640,12 +642,6 @@ textarea:focus {
 
 .row-wide-actions button:first-child {
   color: var(--primary);
-}
-
-.template-actions {
-  margin-top: 10px;
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
 }
 
 .finish-section {
@@ -1055,11 +1051,32 @@ textarea {
 }
 
 .history-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  background: #f3f1ed;
+  user-select: none;
+}
+
+.history-card {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  min-height: 58px;
   padding: 10px;
+  border-radius: calc(var(--radius) - 1px);
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.history-row.swiped .history-card {
+  transform: translateX(-72px);
 }
 
 .history-row strong {
