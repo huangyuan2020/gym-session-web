@@ -1367,7 +1367,7 @@
             <div class="swipe-actions" aria-hidden="true">
               <button class="swipe-action delete" type="button" data-action="delete-history">删除</button>
             </div>
-            <button class="history-card" type="button" data-action="view-history">
+            <button class="history-card" type="button" data-action="open-history">
               <strong>${escapeHtml(formatDateTime(record.startedAt))} · ${escapeHtml(record.title || "力量训练")}</strong>
               <span>${record.totalSets}组 · ${record.totalVolumeKg}kg · ${formatClock(record.totalDurationSec)}</span>
             </button>
@@ -1792,7 +1792,7 @@
         deleteHistoryRecord(id);
         return;
       }
-      if (button.dataset.action === "view-history") {
+      if (button.dataset.action === "open-history") {
         const row = event.target.closest(".history-row");
         if (row.classList.contains("swiped")) {
           closeSwipedHistoryRows();
