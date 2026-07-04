@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1f6f4a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="力量记录" />
+    <title>力量记录</title>
+    <link rel="icon" href="./app-icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./app-icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="./app-icon.svg" alt="" class="brand-mark" />
+          <div>
+            <div class="brand-title">力量记录</div>
+            <div class="brand-subtitle" id="sessionDate"></div>
+          </div>
+        </div>
+        <button class="icon-button" id="historyToggle" type="button" title="历史记录" aria-label="历史记录">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7" />
+            <path d="M3 4v5h5" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+        </button>
+      </header>
+
+      <main class="main-stack">
+        <section class="summary-strip" aria-label="训练概览">
+          <div>
+            <span class="metric-label">组数</span>
+            <strong id="progressSets">0/0</strong>
+          </div>
+          <div>
+            <span class="metric-label">容量</span>
+            <strong id="progressVolume">0kg</strong>
+          </div>
+          <div>
+            <span class="metric-label">用时</span>
+            <strong id="sessionElapsed">00:00</strong>
+          </div>
+          <div>
+            <span class="metric-label">状态</span>
+            <strong id="phaseLabel">准备</strong>
+          </div>
+        </section>
+
+        <section class="current-panel" id="currentPanel" aria-label="当前训练">
+          <div class="panel-kicker">
+            <span id="currentKicker">下一个动作</span>
+            <button class="ghost-button" id="focusQueue" type="button">换动作</button>
+          </div>
+          <h1 id="currentName">加载中</h1>
+          <div class="set-line" id="currentSetLine">第 1 / 1 组</div>
+
+          <div class="timer-block" aria-live="polite">
+            <div class="timer-value" id="mainTimer">00:00</div>
+            <div class="rest-meter" id="restMeter" aria-hidden="true">
+              <span id="restMeterBar"></span>
+            </div>
+          </div>
+
+          <div class="current-inputs">
+            <label>
+              <span>次数</span>
+              <input id="currentReps" type="number" inputmode="numeric" min="0" step="1" />
+            </label>
+            <label>
+              <span>重量 kg</span>
+              <input id="currentWeight" type="number" inputmode="decimal" min="0" step="0.5" />
+            </label>
+            <label>
+              <span>休息 秒</span>
+              <input id="currentRest" type="number" inputmode="numeric" min="0" step="5" />
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button class="primary-action" id="primaryAction" type="button">开始</button>
+            <button class="secondary-action" id="secondaryAction" type="button">跳过休息</button>
+          </div>
+
+          <button class="next-strip" id="nextStrip" type="button">
+            <span id="nextStripLabel">接下来</span>
+            <strong id="nextStripName">加载中</strong>
+          </button>
+        </section>
+
+        <section class="queue-section mobile-panel" id="queueSection" aria-label="训练队列">
+          <div class="section-heading">
+            <h2>训练队列</h2>
+            <div class="heading-actions">
+              <button class="icon-text-button" id="addExercise" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
+                <span>添加</span>
+              </button>
+              <button class="icon-button mobile-only" id="closeQueue" type="button" title="关闭计划" aria-label="关闭计划">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="exercise-list" id="exerciseList"></div>
+          <div class="template-actions">
+            <button class="plain-button" id="saveTemplate" type="button">保存为常用课表</button>
+            <button class="plain-button danger-text" id="resetTemplate" type="button">重置预置</button>
+          </div>
+        </section>
+
+        <section class="finish-section" aria-label="完成训练">
+          <button class="finish-button" id="finishWorkout" type="button">完成训练</button>
+        </section>
+
+        <section class="record-section mobile-panel hidden" id="recordSection" aria-label="本次训练记录">
+          <div class="section-heading">
+            <h2>本次记录</h2>
+            <button class="icon-button" id="closeRecord" type="button" title="关闭记录" aria-label="关闭记录">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="record-stats" id="recordStats"></div>
+          <div class="record-exercises" id="recordExercises"></div>
+          <textarea id="recordJson" readonly spellcheck="false"></textarea>
+          <div class="record-actions">
+            <button class="secondary-action" id="copyRecord" type="button">复制 JSON</button>
+            <button class="secondary-action" id="downloadRecord" type="button">下载</button>
+            <button class="primary-action compact" id="newSession" type="button">新训练</button>
+          </div>
+        </section>
+
+        <section class="history-section mobile-panel hidden" id="historySection" aria-label="历史记录">
+          <div class="section-heading">
+            <h2>历史记录</h2>
+            <div class="heading-actions">
+              <button class="plain-button danger-text" id="clearHistory" type="button">清空</button>
+              <button class="icon-button mobile-only" id="closeHistory" type="button" title="关闭历史" aria-label="关闭历史">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="mobile-scrim" id="mobileScrim" aria-hidden="true"></div>
+
+    <nav class="mobile-dock" aria-label="快速操作">
+      <button id="dockPlan" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 6h13" />
+          <path d="M8 12h13" />
+          <path d="M8 18h13" />
+          <path d="M3 6h.01" />
+          <path d="M3 12h.01" />
+          <path d="M3 18h.01" />
+        </svg>
+        <span>计划</span>
+      </button>
+      <button id="dockRecord" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M9 13h6" />
+          <path d="M9 17h6" />
+        </svg>
+        <span>记录</span>
+      </button>
+      <button id="dockHistory" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7" />
+          <path d="M3 4v5h5" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+        <span>历史</span>
+      </button>
+      <button class="dock-finish" id="finishWorkoutDock" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        <span>完成</span>
+      </button>
+    </nav>
+
+    <div class="sheet-backdrop hidden" id="exerciseSheet" aria-hidden="true">
+      <form class="sheet" id="exerciseForm">
+        <div class="sheet-grip"></div>
+        <div class="section-heading">
+          <h2 id="exerciseFormTitle">添加动作</h2>
+          <button class="icon-button" id="cancelExercise" type="button" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <label class="full-label">
+          <span>动作</span>
+          <input id="exerciseNameInput" type="text" autocomplete="off" required />
+        </label>
+        <div class="form-grid">
+          <label>
+            <span>组数</span>
+            <input id="exerciseSetsInput" type="number" inputmode="numeric" min="1" step="1" required />
+          </label>
+          <label>
+            <span>次数</span>
+            <input id="exerciseRepsInput" type="number" inputmode="numeric" min="0" step="1" required />
+          </label>
+          <label>
+            <span>重量 kg</span>
+            <input id="exerciseWeightInput" type="number" inputmode="decimal" min="0" step="0.5" required />
+          </label>
+          <label>
+            <span>休息 秒</span>
+            <input id="exerciseRestInput" type="number" inputmode="numeric" min="0" step="5" required />
+          </label>
+        </div>
+        <button class="primary-action compact" id="saveExercise" type="submit">保存</button>
+      </form>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

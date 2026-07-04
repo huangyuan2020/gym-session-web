@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="力量记录">
+  <rect width="128" height="128" rx="24" fill="#1f6f4a"/>
+  <path d="M25 75h10V53H25v22Zm68 0h10V53H93v22ZM41 83h12V45H41v38Zm34 0h12V45H75v38ZM56 69h16V59H56v10Z" fill="#fdfcf8"/>
+  <path d="M24 92h80" stroke="#e2a32c" stroke-width="8" stroke-linecap="round"/>
+</svg>
