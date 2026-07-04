@@ -145,13 +145,47 @@
               </svg>
             </button>
           </div>
-          <div class="record-stats" id="recordStats"></div>
-          <div class="record-exercises" id="recordExercises"></div>
-          <textarea id="recordJson" readonly spellcheck="false"></textarea>
+          <div class="record-timeline" id="recordTimeline"></div>
+          <textarea class="hidden" id="recordJson" readonly spellcheck="false"></textarea>
           <div class="record-actions">
             <button class="secondary-action" id="copyRecord" type="button">复制 JSON</button>
-            <button class="secondary-action" id="downloadRecord" type="button">下载</button>
             <button class="primary-action compact" id="newSession" type="button">新训练</button>
+          </div>
+        </section>
+
+        <section class="data-section mobile-panel hidden" id="dataSection" aria-label="训练数据">
+          <div class="section-heading">
+            <h2>训练数据</h2>
+            <div class="heading-actions">
+              <button class="plain-button" id="exportBackup" type="button">备份</button>
+              <button class="plain-button" id="exportCsv" type="button">CSV</button>
+              <button class="icon-button mobile-only" id="closeData" type="button" title="关闭数据" aria-label="关闭数据">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="data-actions">
+            <button class="secondary-action" id="copyAnalysis" type="button">复制分析摘要</button>
+            <button class="secondary-action" id="importBackup" type="button">导入备份</button>
+            <input id="importBackupFile" class="hidden" type="file" accept="application/json,.json" />
+          </div>
+          <div class="analytics-summary" id="analyticsSummary"></div>
+          <div class="analytics-block">
+            <div class="block-heading">
+              <strong>最近容量</strong>
+              <span id="volumeTrendLabel"></span>
+            </div>
+            <div class="volume-chart" id="volumeChart"></div>
+          </div>
+          <div class="analytics-block">
+            <div class="block-heading">
+              <strong>动作进步</strong>
+              <span id="exerciseTrendLabel"></span>
+            </div>
+            <div class="exercise-analytics" id="exerciseAnalytics"></div>
           </div>
         </section>
 
@@ -195,6 +229,13 @@
           <path d="M9 17h6" />
         </svg>
         <span>记录</span>
+      </button>
+      <button id="dockData" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 3v18h18" />
+          <path d="m7 15 4-4 3 3 5-7" />
+        </svg>
+        <span>数据</span>
       </button>
       <button id="dockHistory" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true">

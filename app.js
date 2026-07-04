@@ -27,6 +27,7 @@
     trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 15h10l1-15"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
     up: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>',
     down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
   };
 
   const state = {
@@ -36,6 +37,8 @@
     editor: { mode: "add", exerciseId: null },
     lastRecord: null,
     reopenQueueAfterEdit: false,
+    queuePointer: null,
+    suppressQueueClickUntil: 0,
   };
 
   function uid(prefix) {
@@ -127,6 +130,17 @@
     return new Intl.DateTimeFormat("zh-CN", {
       month: "2-digit",
       day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+
+  function formatTimeOnly(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -463,10 +477,15 @@
 
   function moveExercise(exerciseId, direction) {
     const index = state.session.plan.findIndex((exercise) => exercise.id === exerciseId);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= state.session.plan.length) return;
+    moveExerciseToIndex(exerciseId, index + direction);
+  }
+
+  function moveExerciseToIndex(exerciseId, nextIndex) {
+    const index = state.session.plan.findIndex((exercise) => exercise.id === exerciseId);
+    const boundedIndex = Math.max(0, Math.min(state.session.plan.length - 1, nextIndex));
+    if (index < 0 || boundedIndex < 0 || index === boundedIndex) return;
     const [item] = state.session.plan.splice(index, 1);
-    state.session.plan.splice(nextIndex, 0, item);
+    state.session.plan.splice(boundedIndex, 0, item);
     saveSession();
     renderAll();
   }
@@ -653,13 +672,14 @@
     return {
       queue: $("queueSection"),
       record: $("recordSection"),
+      data: $("dataSection"),
       history: $("historySection"),
     }[name];
   }
 
   function closePanels(options = {}) {
     const { hideSecondary = false } = options;
-    ["queue", "record", "history"].forEach((name) => {
+    ["queue", "record", "data", "history"].forEach((name) => {
       const panel = panelByName(name);
       if (!panel) return;
       panel.classList.remove("sheet-open");
@@ -674,7 +694,7 @@
     if (!panel) return;
     panel.classList.remove("sheet-open");
     if (hide) panel.classList.add("hidden");
-    const stillOpen = ["queue", "record", "history"].some((key) => panelByName(key)?.classList.contains("sheet-open"));
+    const stillOpen = ["queue", "record", "data", "history"].some((key) => panelByName(key)?.classList.contains("sheet-open"));
     if (!stillOpen) {
       $("mobileScrim").classList.remove("sheet-open");
       document.body.classList.remove("panel-active");
@@ -685,10 +705,11 @@
     const panel = panelByName(name);
     if (!panel) return;
 
-    ["queue", "record", "history"].forEach((key) => {
+    ["queue", "record", "data", "history"].forEach((key) => {
       if (key !== name) panelByName(key)?.classList.remove("sheet-open");
     });
 
+    if (name === "data") renderAnalytics();
     panel.classList.remove("hidden");
     panel.classList.add("sheet-open");
 
@@ -709,6 +730,7 @@
     renderNextStrip();
     renderQueue();
     renderHistory();
+    renderAnalytics();
     renderDock();
     if (state.lastRecord) renderRecord(state.lastRecord);
     updateDynamicTimers();
@@ -843,24 +865,22 @@
         const planned = cleanNumber(exercise.sets, 0, true);
         const isActive = state.session.currentExerciseId === exercise.id;
         const isDone = completed >= planned;
+        const reps = cleanNumber(exercise.reps, 0, true);
+        const weight = cleanNumber(exercise.weight, 0);
+        const rest = cleanNumber(exercise.restSec, 0, true);
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
-            <div class="exercise-main">
-              <div class="exercise-title-line">
-                <div class="exercise-title">${escapeHtml(exercise.name)}</div>
-                <span class="exercise-badge">${completed}/${planned}</span>
-              </div>
-              <div class="exercise-meta">${planned}组 · ${cleanNumber(exercise.reps, 0, true)}次 · ${cleanNumber(exercise.weight, 0)}kg · 休${cleanNumber(exercise.restSec, 0, true)}秒</div>
+            <div class="swipe-actions" aria-hidden="true">
+              <button class="swipe-action delete" type="button" data-action="delete">删除</button>
             </div>
-            <div class="row-actions">
-              <button class="icon-button" type="button" data-action="up" title="上移" aria-label="上移" ${index === 0 ? "disabled" : ""}>${icons.up}</button>
-              <button class="icon-button" type="button" data-action="down" title="下移" aria-label="下移" ${index === state.session.plan.length - 1 ? "disabled" : ""}>${icons.down}</button>
-              <button class="icon-button" type="button" data-action="edit" title="编辑" aria-label="编辑">${icons.edit}</button>
-              <button class="icon-button" type="button" data-action="delete" title="删除" aria-label="删除">${icons.trash}</button>
-            </div>
-            <div class="row-wide-actions">
-              <button type="button" data-action="activate">设为下一个</button>
-              <button type="button" data-action="add-set">加一组</button>
+            <div class="exercise-card">
+              <button class="exercise-main" type="button" data-action="edit">
+                <div class="exercise-title-line">
+                  <div class="exercise-title">${escapeHtml(exercise.name)}</div>
+                  <span class="exercise-badge">${completed}/${planned}</span>
+                </div>
+                <div class="exercise-meta">${planned}组 · ${reps}次 · ${weight}kg · ${rest}s</div>
+              </button>
             </div>
           </article>
         `;
@@ -868,35 +888,481 @@
       .join("");
   }
 
+  function closeSwipedRows(exceptRow = null) {
+    document.querySelectorAll(".exercise-row.swiped").forEach((row) => {
+      if (row === exceptRow) return;
+      row.classList.remove("swiped");
+      const card = row.querySelector(".exercise-card");
+      if (card) card.style.transform = "";
+    });
+  }
+
+  function queueDropIndexFromY(activeRow, clientY) {
+    const rows = Array.from($("exerciseList").querySelectorAll(".exercise-row")).filter((row) => row !== activeRow);
+    const targetIndex = rows.findIndex((row) => {
+      const rect = row.getBoundingClientRect();
+      return clientY < rect.top + rect.height / 2;
+    });
+    return targetIndex === -1 ? rows.length : targetIndex;
+  }
+
+  function beginQueueGesture(event, pointerId, clientX, clientY, pointerType = "touch", button = 0) {
+    if (state.queuePointer) return;
+    if (pointerType === "mouse" && button !== 0) return;
+    if (event.target.closest(".swipe-actions button")) return;
+    const row = event.target.closest(".exercise-row");
+    if (!row) return;
+
+    const pointer = {
+      row,
+      id: row.dataset.id,
+      pointerId,
+      startX: clientX,
+      startY: clientY,
+      mode: null,
+      longReady: false,
+      longPressTimer: null,
+      opened: row.classList.contains("swiped"),
+    };
+    pointer.longPressTimer = window.setTimeout(() => {
+      if (state.queuePointer !== pointer || pointer.mode) return;
+      pointer.longReady = true;
+      row.classList.add("drag-armed");
+    }, 360);
+    state.queuePointer = pointer;
+    if (Number.isFinite(pointerId)) row.setPointerCapture?.(pointerId);
+  }
+
+  function clearQueueLongPress(pointer) {
+    if (!pointer?.longPressTimer) return;
+    window.clearTimeout(pointer.longPressTimer);
+    pointer.longPressTimer = null;
+  }
+
+  function beginQueuePointer(event) {
+    beginQueueGesture(event, event.pointerId, event.clientX, event.clientY, event.pointerType, event.button);
+  }
+
+  function moveQueueGesture(event, pointerId, clientX, clientY) {
+    const pointer = state.queuePointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".exercise-card");
+    if (!card) return;
+
+    const dx = clientX - pointer.startX;
+    const dy = clientY - pointer.startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (!pointer.mode) {
+      if (Math.max(absX, absY) < 8) return;
+      if (absX > absY * 1.15) {
+        pointer.mode = "swipe";
+      } else if (pointer.longReady) {
+        pointer.mode = "drag";
+      } else {
+        return;
+      }
+      clearQueueLongPress(pointer);
+      closeSwipedRows(pointer.mode === "swipe" ? pointer.row : null);
+      pointer.row.classList.remove("drag-armed");
+      pointer.row.classList.add(pointer.mode === "swipe" ? "swiping" : "dragging");
+      card.style.transition = "none";
+    }
+
+    if (pointer.mode === "swipe") {
+      event.preventDefault();
+      const base = pointer.opened ? -72 : 0;
+      const offset = Math.max(-72, Math.min(16, base + dx));
+      card.style.transform = `translateX(${offset > 0 ? offset * 0.25 : offset}px)`;
+      return;
+    }
+
+    event.preventDefault();
+    card.style.transform = `translateY(${dy}px)`;
+  }
+
+  function moveQueuePointer(event) {
+    moveQueueGesture(event, event.pointerId, event.clientX, event.clientY);
+  }
+
+  function finishQueueGesture(event, pointerId, clientX, clientY) {
+    const pointer = state.queuePointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".exercise-card");
+    const dx = clientX - pointer.startX;
+    const dy = clientY - pointer.startY;
+
+    if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
+    clearQueueLongPress(pointer);
+    pointer.row.classList.remove("swiping", "dragging", "drag-armed");
+    if (card) {
+      card.style.transition = "";
+      card.style.transform = "";
+    }
+
+    if (pointer.mode === "swipe") {
+      const shouldOpen = pointer.opened ? dx < 28 : dx < -42;
+      pointer.row.classList.toggle("swiped", shouldOpen);
+      state.suppressQueueClickUntil = Date.now() + 350;
+    } else if (pointer.mode === "drag") {
+      const nextIndex = queueDropIndexFromY(pointer.row, clientY);
+      if (Math.abs(dy) > 18) moveExerciseToIndex(pointer.id, nextIndex);
+      state.suppressQueueClickUntil = Date.now() + 350;
+    } else if (pointer.longReady) {
+      state.suppressQueueClickUntil = Date.now() + 350;
+    }
+
+    state.queuePointer = null;
+  }
+
+  function finishQueuePointer(event) {
+    finishQueueGesture(event, event.pointerId, event.clientX, event.clientY);
+  }
+
+  function cancelQueueGesture(pointerId) {
+    const pointer = state.queuePointer;
+    if (!pointer || pointer.pointerId !== pointerId) return;
+    const card = pointer.row.querySelector(".exercise-card");
+    if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
+    clearQueueLongPress(pointer);
+    pointer.row.classList.remove("swiping", "dragging", "drag-armed");
+    if (card) {
+      card.style.transition = "";
+      card.style.transform = "";
+    }
+    state.queuePointer = null;
+  }
+
+  function cancelQueuePointer(event) {
+    cancelQueueGesture(event.pointerId);
+  }
+
+  function beginQueueMouse(event) {
+    beginQueueGesture(event, "mouse", event.clientX, event.clientY, "mouse", event.button);
+  }
+
+  function moveQueueMouse(event) {
+    moveQueueGesture(event, "mouse", event.clientX, event.clientY);
+  }
+
+  function finishQueueMouse(event) {
+    finishQueueGesture(event, "mouse", event.clientX, event.clientY);
+  }
+
+  function beginQueueTouch(event) {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    beginQueueGesture(event, "touch", touch.clientX, touch.clientY, "touch", 0);
+  }
+
+  function moveQueueTouch(event) {
+    if (!event.touches.length) return;
+    const touch = event.touches[0];
+    moveQueueGesture(event, "touch", touch.clientX, touch.clientY);
+  }
+
+  function finishQueueTouch(event) {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    finishQueueGesture(event, "touch", touch.clientX, touch.clientY);
+  }
+
+  function parseTime(iso) {
+    const time = new Date(iso || "").getTime();
+    return Number.isFinite(time) ? time : null;
+  }
+
+  function exerciseColor(name) {
+    const palette = ["#2f7d5b", "#356fc2", "#b05d3b", "#7b5aa6", "#16817a", "#b47b1c", "#5f7564", "#9b4d55"];
+    const text = String(name || "");
+    const hash = [...text].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return palette[hash % palette.length];
+  }
+
+  function buildTimelineItems(record) {
+    const rawSets = [...(record.sets || [])].sort((a, b) => (parseTime(a.workStartedAt) || 0) - (parseTime(b.workStartedAt) || 0));
+    const items = [];
+
+    rawSets.forEach((set) => {
+      const workStart = parseTime(set.workStartedAt);
+      const workEnd = parseTime(set.workEndedAt);
+      if (workStart && workEnd && workEnd >= workStart) {
+        items.push({
+          type: "work",
+          color: exerciseColor(set.exerciseName),
+          startIso: set.workStartedAt,
+          endIso: set.workEndedAt,
+          start: workStart,
+          end: workEnd,
+          title: `${set.exerciseName || "未命名动作"} 第${cleanNumber(set.setNumber, 1, true)}组`,
+          meta: `${cleanNumber(set.actualReps, 0, true)}次 × ${formatKg(set.actualWeight)} · ${formatClock(set.workDurationSec)}`,
+        });
+      }
+
+      const restStart = parseTime(set.restStartedAt);
+      const restEnd = parseTime(set.restEndedAt);
+      if (restStart && restEnd && restEnd > restStart) {
+        items.push({
+          type: "rest",
+          color: "#c3c8bd",
+          startIso: set.restStartedAt,
+          endIso: set.restEndedAt,
+          start: restStart,
+          end: restEnd,
+          title: "休息",
+          meta: `目标 ${formatClock(set.restTargetSec)} · 实际 ${formatClock(set.restDurationSec)}`,
+        });
+      }
+    });
+
+    return items.sort((a, b) => a.start - b.start);
+  }
+
+  function renderRecordTimeline(record) {
+    const target = $("recordTimeline");
+    const items = buildTimelineItems(record);
+    if (!items.length) {
+      target.innerHTML = "";
+      target.classList.add("hidden");
+      return;
+    }
+    target.classList.remove("hidden");
+
+    const start = parseTime(record.startedAt) || items[0].start;
+    const end = parseTime(record.finishedAt) || items[items.length - 1].end;
+    const totalMs = Math.max(1, end - start);
+    const railHeight = Math.min(520, Math.max(220, items.length * 42));
+    const segments = items
+      .map((item) => {
+        const top = Math.max(0, ((item.start - start) / totalMs) * 100);
+        const height = Math.max(1.4, ((item.end - item.start) / totalMs) * 100);
+        return `<span class="timeline-segment ${item.type}" style="--top:${top}%;--height:${height}%;--tone:${item.color}"></span>`;
+      })
+      .join("");
+
+    const rows = items
+      .map(
+        (item) => `
+          <div class="timeline-event ${item.type}" style="--tone:${item.color}">
+            <div class="timeline-time">${formatTimeOnly(item.startIso)}-${formatTimeOnly(item.endIso)}</div>
+            <div class="timeline-copy">
+              <strong>${escapeHtml(item.title)}</strong>
+              <span>${escapeHtml(item.meta)}</span>
+            </div>
+          </div>
+        `,
+      )
+      .join("");
+
+    target.innerHTML = `
+      <div class="timeline-heading">
+        <strong>时间线</strong>
+        <span>${formatClock(Math.round(totalMs / 1000))}</span>
+      </div>
+      <div class="timeline-layout">
+        <div class="timeline-rail" style="height:${railHeight}px">${segments}</div>
+        <div class="timeline-list">${rows}</div>
+      </div>
+    `;
+  }
+
   function renderRecord(record) {
-    $("recordStats").innerHTML = `
-      <div><span>组数</span><strong>${record.totalSets}</strong></div>
-      <div><span>容量</span><strong>${record.totalVolumeKg}kg</strong></div>
-      <div><span>用时</span><strong>${formatClock(record.totalDurationSec)}</strong></div>
+    renderRecordTimeline(record);
+    $("recordJson").value = JSON.stringify(record, null, 2);
+  }
+
+  function shortDate(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(date);
+  }
+
+  function formatKg(value) {
+    const next = Math.round(cleanNumber(value, 0) * 10) / 10;
+    return `${next}kg`;
+  }
+
+  function estimateOneRm(weight, reps) {
+    const actualWeight = cleanNumber(weight, 0);
+    const actualReps = cleanNumber(reps, 0, true);
+    if (actualWeight <= 0) return actualReps;
+    return Math.round(actualWeight * (1 + actualReps / 30) * 10) / 10;
+  }
+
+  function sortedHistory() {
+    return [...state.history].sort((a, b) => new Date(a.finishedAt || a.startedAt).getTime() - new Date(b.finishedAt || b.startedAt).getTime());
+  }
+
+  function setsByExerciseFromRecord(record) {
+    if (Array.isArray(record.exercises) && record.exercises.length) {
+      return record.exercises
+        .map((exercise) => ({
+          name: exercise.name,
+          sets: Array.isArray(exercise.sets) ? exercise.sets : [],
+        }))
+        .filter((exercise) => exercise.name && exercise.sets.length);
+    }
+
+    const grouped = new Map();
+    (record.sets || []).forEach((set) => {
+      const name = set.exerciseName || "未命名动作";
+      if (!grouped.has(name)) grouped.set(name, []);
+      grouped.get(name).push(set);
+    });
+    return [...grouped.entries()].map(([name, sets]) => ({ name, sets }));
+  }
+
+  function bestSetSummary(sets) {
+    return sets.reduce(
+      (best, set) => {
+        const reps = cleanNumber(set.actualReps, 0, true);
+        const weight = cleanNumber(set.actualWeight, 0);
+        const e1rm = estimateOneRm(weight, reps);
+        const score = e1rm * 1000 + weight * 10 + reps;
+        return score > best.score ? { reps, weight, e1rm, score } : best;
+      },
+      { reps: 0, weight: 0, e1rm: 0, score: -1 },
+    );
+  }
+
+  function buildAnalytics() {
+    const records = sortedHistory();
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const recentVolume = records
+      .filter((record) => new Date(record.finishedAt || record.startedAt).getTime() >= thirtyDaysAgo)
+      .reduce((sum, record) => sum + cleanNumber(record.totalVolumeKg, 0), 0);
+
+    const exerciseMap = new Map();
+    records.forEach((record) => {
+      const date = record.finishedAt || record.startedAt;
+      setsByExerciseFromRecord(record).forEach((exercise) => {
+        const sets = exercise.sets.filter((set) => cleanNumber(set.actualReps, 0, true) > 0);
+        if (!sets.length) return;
+        const best = bestSetSummary(sets);
+        const volume = Math.round(totalVolume(sets) * 10) / 10;
+        if (!exerciseMap.has(exercise.name)) exerciseMap.set(exercise.name, []);
+        exerciseMap.get(exercise.name).push({
+          recordId: record.id,
+          date,
+          label: shortDate(date),
+          bestWeight: best.weight,
+          bestReps: best.reps,
+          bestE1rm: best.e1rm,
+          volume,
+          sets: sets.length,
+        });
+      });
+    });
+
+    const exercises = [...exerciseMap.entries()]
+      .map(([name, entries]) => {
+        const ordered = entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const latest = ordered[ordered.length - 1];
+        const previous = ordered[ordered.length - 2] || null;
+        const best = ordered.reduce((top, entry) => (entry.bestE1rm > top.bestE1rm ? entry : top), ordered[0]);
+        const delta = previous ? Math.round((latest.bestE1rm - previous.bestE1rm) * 10) / 10 : null;
+        const isPr = latest.recordId === best.recordId && ordered.length > 1;
+        return { name, entries: ordered, latest, previous, best, delta, isPr };
+      })
+      .sort((a, b) => new Date(b.latest.date).getTime() - new Date(a.latest.date).getTime());
+
+    const prCount = exercises.filter((exercise) => exercise.isPr).length;
+    return { records, recentVolume: Math.round(recentVolume * 10) / 10, exercises, prCount };
+  }
+
+  function progressBadge(exercise) {
+    if (!exercise.previous) return { text: "首次", tone: "flat" };
+    if (exercise.delta > 0.4) return { text: exercise.isPr ? `PR +${exercise.delta}` : `+${exercise.delta}`, tone: "" };
+    if (exercise.delta < -0.4) return { text: `${exercise.delta}`, tone: "down" };
+    return { text: "持平", tone: "flat" };
+  }
+
+  function renderAnalytics() {
+    const analytics = buildAnalytics();
+    const records = analytics.records;
+    if (!records.length) {
+      $("analyticsSummary").innerHTML = `
+        <div class="analytics-metric"><span>训练</span><strong>0</strong></div>
+        <div class="analytics-metric"><span>30天容量</span><strong>0kg</strong></div>
+        <div class="analytics-metric"><span>动作</span><strong>0</strong></div>
+      `;
+      $("volumeTrendLabel").textContent = "";
+      $("exerciseTrendLabel").textContent = "";
+      $("volumeChart").innerHTML = '<div class="empty-state">完成几次训练后，这里会出现趋势</div>';
+      $("exerciseAnalytics").innerHTML = '<div class="empty-state">暂无动作数据</div>';
+      return;
+    }
+
+    $("analyticsSummary").innerHTML = `
+      <div class="analytics-metric"><span>训练</span><strong>${records.length}</strong></div>
+      <div class="analytics-metric"><span>30天容量</span><strong>${formatKg(analytics.recentVolume)}</strong></div>
+      <div class="analytics-metric"><span>本次PR</span><strong>${analytics.prCount}</strong></div>
     `;
 
-    const completedExercises = record.exercises.filter((exercise) => exercise.completedSets > 0);
-    $("recordExercises").innerHTML = completedExercises.length
-      ? completedExercises
+    const recent = records.slice(-8);
+    const maxVolume = Math.max(...recent.map((record) => cleanNumber(record.totalVolumeKg, 0)), 1);
+    $("volumeTrendLabel").textContent = `${shortDate(recent[0]?.finishedAt || recent[0]?.startedAt)} - ${shortDate(recent[recent.length - 1]?.finishedAt || recent[recent.length - 1]?.startedAt)}`;
+    $("volumeChart").innerHTML = recent
+      .map((record) => {
+        const volume = cleanNumber(record.totalVolumeKg, 0);
+        const height = Math.max(4, Math.round((volume / maxVolume) * 88));
+        return `
+          <div class="volume-bar" title="${formatKg(volume)}">
+            <span class="volume-bar-fill" style="height:${height}px"></span>
+            <span class="volume-bar-label">${shortDate(record.finishedAt || record.startedAt)}</span>
+          </div>
+        `;
+      })
+      .join("");
+
+    const visibleExercises = analytics.exercises.slice(0, 10);
+    $("exerciseTrendLabel").textContent = `${analytics.exercises.length} 个动作`;
+    $("exerciseAnalytics").innerHTML = visibleExercises.length
+      ? visibleExercises
           .map((exercise) => {
-            const chips = exercise.sets
-              .map(
-                (set) =>
-                  `<span class="set-chip">${set.setNumber}: ${cleanNumber(set.actualReps, 0, true)}次 × ${cleanNumber(set.actualWeight, 0)}kg · ${formatClock(set.workDurationSec)}</span>`,
-              )
+            const badge = progressBadge(exercise);
+            const max = Math.max(...exercise.entries.map((entry) => entry.bestE1rm), 1);
+            const bars = exercise.entries
+              .slice(-8)
+              .map((entry) => `<span title="${entry.label} ${entry.bestE1rm}" style="height:${Math.max(3, Math.round((entry.bestE1rm / max) * 34))}px"></span>`)
               .join("");
             return `
-              <article class="record-row">
-                <strong>${escapeHtml(exercise.name)}</strong>
-                <div class="exercise-meta">${exercise.completedSets}/${exercise.plannedSets || exercise.completedSets}组 · ${Math.round(exercise.volumeKg * 10) / 10}kg</div>
-                <div class="set-chips">${chips}</div>
+              <article class="exercise-progress-card">
+                <div class="progress-title-line">
+                  <strong>${escapeHtml(exercise.name)}</strong>
+                  <span class="progress-badge ${badge.tone}">${escapeHtml(badge.text)}</span>
+                </div>
+                <div class="progress-stats">
+                  <div><span>最新最好</span><strong>${formatKg(exercise.latest.bestWeight)} × ${exercise.latest.bestReps}</strong></div>
+                  <div><span>估算1RM</span><strong>${exercise.latest.bestE1rm}</strong></div>
+                  <div><span>最好纪录</span><strong>${formatKg(exercise.best.bestWeight)} × ${exercise.best.bestReps}</strong></div>
+                </div>
+                <div class="sparkline">${bars}</div>
               </article>
             `;
           })
           .join("")
-      : '<div class="empty-state">没有已完成组</div>';
+      : '<div class="empty-state">暂无动作数据</div>';
+  }
 
-    $("recordJson").value = JSON.stringify(record, null, 2);
+  function buildAnalysisSummary() {
+    const analytics = buildAnalytics();
+    const lines = [
+      `训练次数：${analytics.records.length}`,
+      `近30天容量：${formatKg(analytics.recentVolume)}`,
+      `本次刷新动作数：${analytics.prCount}`,
+      "",
+      "动作趋势：",
+    ];
+    analytics.exercises.slice(0, 20).forEach((exercise) => {
+      const badge = progressBadge(exercise);
+      const previous = exercise.previous ? `上次 ${formatKg(exercise.previous.bestWeight)}x${exercise.previous.bestReps}` : "首次记录";
+      lines.push(`- ${exercise.name}: 最新 ${formatKg(exercise.latest.bestWeight)}x${exercise.latest.bestReps}, ${previous}, ${badge.text}, 估算1RM ${exercise.latest.bestE1rm}`);
+    });
+    return lines.join("\n");
   }
 
   function renderHistory() {
@@ -947,30 +1413,121 @@
   }
 
   async function copyRecord() {
-    const text = $("recordJson").value;
+    const text = state.lastRecord ? JSON.stringify(state.lastRecord, null, 2) : $("recordJson").value;
     try {
       await navigator.clipboard.writeText(text);
       flashButton($("copyRecord"), "已复制");
     } catch {
-      $("recordJson").focus();
-      $("recordJson").select();
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
       flashButton($("copyRecord"), "已选中");
     }
   }
 
-  function downloadRecord() {
-    const text = $("recordJson").value;
-    if (!text) return;
-    const record = JSON.parse(text);
-    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+  function downloadText(filename, text, type = "text/plain;charset=utf-8") {
+    const blob = new Blob([text], { type });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `workout-${record.startedAt ? record.startedAt.slice(0, 10) : "record"}.json`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  function exportAllBackup() {
+    const payload = {
+      app: "gym-session-web",
+      version: 1,
+      exportedAt: isoNow(),
+      template: state.template,
+      currentSession: state.session?.status === "finished" ? null : state.session,
+      history: state.history,
+    };
+    downloadText(`workout-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+  }
+
+  function csvValue(value) {
+    const text = String(value ?? "");
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function exportAnalysisCsv() {
+    const rows = [
+      ["date", "session_id", "exercise", "set_number", "reps", "weight_kg", "volume_kg", "estimated_1rm", "work_duration_sec", "rest_duration_sec"],
+    ];
+    sortedHistory().forEach((record) => {
+      const date = (record.finishedAt || record.startedAt || "").slice(0, 10);
+      (record.sets || []).forEach((set) => {
+        const reps = cleanNumber(set.actualReps, 0, true);
+        const weight = cleanNumber(set.actualWeight, 0);
+        rows.push([
+          date,
+          record.id,
+          set.exerciseName,
+          set.setNumber,
+          reps,
+          weight,
+          Math.round(reps * weight * 10) / 10,
+          estimateOneRm(weight, reps),
+          set.workDurationSec ?? "",
+          set.restDurationSec ?? "",
+        ]);
+      });
+    });
+    downloadText(`workout-analysis-${new Date().toISOString().slice(0, 10)}.csv`, rows.map((row) => row.map(csvValue).join(",")).join("\n"), "text/csv;charset=utf-8");
+  }
+
+  async function copyAnalysisSummary() {
+    const text = buildAnalysisSummary();
+    try {
+      await navigator.clipboard.writeText(text);
+      flashButton($("copyAnalysis"), "已复制");
+    } catch {
+      downloadText(`workout-summary-${new Date().toISOString().slice(0, 10)}.txt`, text);
+      flashButton($("copyAnalysis"), "已下载");
+    }
+  }
+
+  function importBackupFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(String(reader.result || "{}"));
+        const importedHistory = Array.isArray(payload.history) ? payload.history : Array.isArray(payload) ? payload : null;
+        if (!importedHistory) throw new Error("invalid backup");
+        if (state.history.length && !window.confirm("导入会合并备份数据，保留同 ID 的最新记录。")) return;
+
+        const merged = new Map(state.history.map((record) => [record.id, record]));
+        importedHistory.forEach((record) => {
+          if (record?.id) merged.set(record.id, record);
+        });
+        state.history = [...merged.values()].sort((a, b) => new Date(b.finishedAt || b.startedAt).getTime() - new Date(a.finishedAt || a.startedAt).getTime());
+        if (payload.template?.exercises?.length) {
+          state.template = payload.template;
+          saveTemplate();
+        }
+        saveHistory();
+        renderAll();
+        openPanel("data");
+        flashButton($("importBackup"), "已导入");
+      } catch {
+        window.alert("导入失败：请选择本应用导出的备份 JSON。");
+      } finally {
+        $("importBackupFile").value = "";
+      }
+    };
+    reader.readAsText(file);
   }
 
   function bindEvents() {
@@ -1006,10 +1563,12 @@
       renderRecord(state.lastRecord);
       openPanel("record");
     });
+    $("dockData").addEventListener("click", () => openPanel("data"));
     $("dockHistory").addEventListener("click", () => openPanel("history"));
     $("nextStrip").addEventListener("click", () => openPanel("queue"));
     $("mobileScrim").addEventListener("click", () => closePanels({ hideSecondary: true }));
     $("closeQueue").addEventListener("click", () => closePanel("queue"));
+    $("closeData").addEventListener("click", () => closePanel("data", true));
     $("closeHistory").addEventListener("click", () => closePanel("history", true));
     $("addExercise").addEventListener("click", () => openExerciseEditor("add"));
     $("cancelExercise").addEventListener("click", closeExerciseEditor);
@@ -1027,8 +1586,23 @@
       });
     });
 
+    $("exerciseList").addEventListener("pointerdown", beginQueuePointer);
+    $("exerciseList").addEventListener("pointermove", moveQueuePointer, { passive: false });
+    $("exerciseList").addEventListener("pointerup", finishQueuePointer);
+    $("exerciseList").addEventListener("pointercancel", cancelQueuePointer);
+    $("exerciseList").addEventListener("mousedown", beginQueueMouse);
+    document.addEventListener("mousemove", moveQueueMouse);
+    document.addEventListener("mouseup", finishQueueMouse);
+    $("exerciseList").addEventListener("touchstart", beginQueueTouch, { passive: true });
+    $("exerciseList").addEventListener("touchmove", moveQueueTouch, { passive: false });
+    $("exerciseList").addEventListener("touchend", finishQueueTouch);
+    $("exerciseList").addEventListener("touchcancel", () => cancelQueueGesture("touch"));
     $("exerciseList").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
+      if (Date.now() < state.suppressQueueClickUntil && button?.dataset.action !== "delete") {
+        event.preventDefault();
+        return;
+      }
       if (!button) return;
       const row = event.target.closest(".exercise-row");
       const id = row?.dataset.id;
@@ -1037,16 +1611,28 @@
 
       if (action === "up") moveExercise(id, -1);
       if (action === "down") moveExercise(id, 1);
-      if (action === "edit") openExerciseEditor("edit", id);
-      if (action === "delete") deleteExercise(id);
-      if (action === "activate") setActiveExercise(id);
-      if (action === "add-set") incrementPlannedSet(id);
+      if (action === "edit") {
+        if (row.classList.contains("swiped")) {
+          closeSwipedRows();
+          return;
+        }
+        closeSwipedRows();
+        openExerciseEditor("edit", id);
+      }
+      if (action === "delete") {
+        closeSwipedRows();
+        deleteExercise(id);
+      }
     });
 
     $("saveTemplate").addEventListener("click", savePlanAsTemplate);
     $("resetTemplate").addEventListener("click", resetTemplateAndSession);
     $("copyRecord").addEventListener("click", copyRecord);
-    $("downloadRecord").addEventListener("click", downloadRecord);
+    $("exportBackup").addEventListener("click", exportAllBackup);
+    $("exportCsv").addEventListener("click", exportAnalysisCsv);
+    $("copyAnalysis").addEventListener("click", copyAnalysisSummary);
+    $("importBackup").addEventListener("click", () => $("importBackupFile").click());
+    $("importBackupFile").addEventListener("change", (event) => importBackupFile(event.target.files?.[0]));
     $("newSession").addEventListener("click", startNewSession);
     $("closeRecord").addEventListener("click", () => closePanel("record", true));
 
