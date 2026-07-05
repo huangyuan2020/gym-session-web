@@ -1,22 +1,24 @@
 (() => {
   const STORE = {
     template: "gym-session-template-v1",
+    templates: "gym-session-templates-v1",
+    activeTemplateId: "gym-session-active-template-v1",
     current: "gym-session-current-v1",
     history: "gym-session-history-v1",
   };
 
   const DEFAULT_TEMPLATE = {
+    id: "tplset_full_body_a",
     name: "全身力量 A",
     updatedAt: new Date().toISOString(),
     exercises: [
-      { id: "tpl_squat", name: "杠铃深蹲", sets: 4, reps: 8, weight: 60, restSec: 90 },
-      { id: "tpl_bench", name: "杠铃卧推", sets: 4, reps: 8, weight: 50, restSec: 90 },
-      { id: "tpl_rdl", name: "罗马尼亚硬拉", sets: 3, reps: 10, weight: 55, restSec: 90 },
-      { id: "tpl_row", name: "坐姿划船", sets: 3, reps: 10, weight: 45, restSec: 75 },
-      { id: "tpl_lat", name: "高位下拉", sets: 3, reps: 10, weight: 45, restSec: 75 },
-      { id: "tpl_press", name: "哑铃肩推", sets: 3, reps: 10, weight: 16, restSec: 75 },
-      { id: "tpl_pushdown", name: "绳索下压", sets: 3, reps: 12, weight: 25, restSec: 60 },
-      { id: "tpl_core", name: "卷腹", sets: 3, reps: 15, weight: 0, restSec: 45 },
+      { id: "tpl_row_machine", name: "器械划船", sets: 1, reps: 12, weight: 15, restSec: 60 },
+      { id: "tpl_assist_pullup", name: "辅助引体向上", sets: 4, reps: 10, weight: 60, restSec: 75 },
+      { id: "tpl_rdl", name: "罗马尼亚硬拉", sets: 4, reps: 10, weight: 12, restSec: 75 },
+      { id: "tpl_hack_press", name: "哈克推肩", sets: 3, reps: 10, weight: 0, restSec: 60 },
+      { id: "tpl_chest_machine", name: "器械推胸", sets: 3, reps: 8, weight: 0, restSec: 60 },
+      { id: "tpl_hip_abduction", name: "髋外展器械", sets: 4, reps: 12, weight: 40, restSec: 60 },
+      { id: "tpl_db_curl_alt", name: "哑铃弯举交替单侧", sets: 6, reps: 12, weight: 3, restSec: 60 },
     ],
   };
 
@@ -32,6 +34,8 @@
 
   const state = {
     template: null,
+    templates: [],
+    activeTemplateId: null,
     session: null,
     history: [],
     editor: { mode: "add", exerciseId: null },
@@ -162,6 +166,7 @@
 
     return {
       id: uid("session"),
+      templateId: template.id,
       templateName: template.name,
       createdAt: isoNow(),
       startedAt: null,
@@ -183,16 +188,32 @@
     saveJson(STORE.current, state.session);
   }
 
-  function saveTemplate() {
-    saveJson(STORE.template, state.template);
+  function normalizeTemplate(template, fallbackName = "训练计划") {
+    const source = template || {};
+    const exercises = Array.isArray(source.exercises) ? source.exercises : [];
+    return {
+      id: source.id || uid("tplset"),
+      name: cleanText(source.name) || fallbackName,
+      updatedAt: source.updatedAt || isoNow(),
+      exercises: exercises.map((exercise) => ({
+        id: exercise.id || uid("tpl"),
+        name: cleanText(exercise.name) || "未命名动作",
+        sets: cleanNumber(exercise.sets ?? exercise.plannedSets, 1, true) || 1,
+        reps: cleanNumber(exercise.reps ?? exercise.targetReps, 0, true),
+        weight: cleanNumber(exercise.weight ?? exercise.targetWeight, 0),
+        restSec: cleanNumber(exercise.restSec, 60, true),
+      })),
+    };
   }
 
-  function syncTemplateFromSession() {
-    state.template = {
-      name: state.session.templateName || state.template?.name || "全身力量 A",
+  function templateFromSession(baseTemplate = state.template, name = state.session.templateName || "训练计划", options = {}) {
+    const { freshExerciseIds = false } = options;
+    return {
+      id: baseTemplate?.id || uid("tplset"),
+      name: cleanText(name) || "训练计划",
       updatedAt: isoNow(),
-      exercises: state.session.plan.map((exercise) => ({
-        id: exercise.sourceId || exercise.id || uid("tpl"),
+      exercises: state.session.plan.map((exercise, index) => ({
+        id: freshExerciseIds ? uid(`tpl_${index + 1}`) : exercise.sourceId || exercise.id || uid("tpl"),
         name: exercise.name,
         sets: cleanNumber(exercise.sets, 1, true),
         reps: cleanNumber(exercise.reps, 0, true),
@@ -200,7 +221,27 @@
         restSec: cleanNumber(exercise.restSec, 60, true),
       })),
     };
-    saveTemplate();
+  }
+
+  function setActiveTemplate(templateId) {
+    const template = state.templates.find((item) => item.id === templateId) || state.templates[0] || normalizeTemplate(DEFAULT_TEMPLATE, "全身力量 A");
+    state.activeTemplateId = template.id;
+    state.template = template;
+  }
+
+  function saveTemplates() {
+    if (!state.templates.length && state.template) state.templates = [state.template];
+    setActiveTemplate(state.activeTemplateId || state.template?.id || state.templates[0]?.id);
+    saveJson(STORE.templates, state.templates);
+    saveJson(STORE.activeTemplateId, state.activeTemplateId);
+    saveJson(STORE.template, state.template);
+  }
+
+  function saveTemplate() {
+    const index = state.templates.findIndex((template) => template.id === state.template?.id);
+    if (index >= 0) state.templates[index] = state.template;
+    else if (state.template) state.templates.push(state.template);
+    saveTemplates();
   }
 
   function saveHistory() {
@@ -499,7 +540,6 @@
     if (index < 0 || boundedIndex < 0 || index === boundedIndex) return;
     const [item] = state.session.plan.splice(index, 1);
     state.session.plan.splice(boundedIndex, 0, item);
-    syncTemplateFromSession();
     saveSession();
     renderAll();
   }
@@ -519,7 +559,6 @@
       hydrateDraft(true);
     }
     ensurePointer();
-    syncTemplateFromSession();
     saveSession();
     renderAll();
   }
@@ -579,7 +618,6 @@
     }
 
     ensurePointer();
-    syncTemplateFromSession();
     saveSession();
     const shouldReopenQueue = state.reopenQueueAfterEdit;
     $("exerciseSheet").classList.add("hidden");
@@ -604,7 +642,6 @@
     if (field === "weight") exercise.weight = value;
     if (field === "restSec") exercise.restSec = value;
 
-    syncTemplateFromSession();
     saveSession();
     renderQueue();
     updateDynamicTimers();
@@ -622,6 +659,61 @@
     const value = cleanNumber(cleanNumber(fallback, 0, integer) + dir * step, 0, integer);
     updateCurrentDraft(field, value);
     renderCurrent();
+  }
+
+  function hasActiveWork() {
+    return state.session?.sets?.length > 0 || state.session?.phase === "work" || state.session?.phase === "rest";
+  }
+
+  function switchTemplate(templateId) {
+    if (templateId === state.activeTemplateId) return;
+    if (hasActiveWork() && !window.confirm("切换计划会清掉当前未完成训练，是否继续？")) return;
+    setActiveTemplate(templateId);
+    state.session = createSessionFromTemplate(state.template);
+    state.lastRecord = null;
+    saveTemplates();
+    saveSession();
+    $("recordSection").classList.add("hidden");
+    renderAll();
+    openPanel("queue");
+  }
+
+  function overwriteActiveTemplate() {
+    const next = templateFromSession(state.template, state.template?.name || state.session.templateName || "训练计划");
+    const index = state.templates.findIndex((template) => template.id === next.id);
+    if (index >= 0) state.templates[index] = next;
+    else state.templates.push(next);
+    state.template = next;
+    state.activeTemplateId = next.id;
+    state.session.templateId = next.id;
+    state.session.templateName = next.name;
+    state.session.plan.forEach((exercise, index) => {
+      exercise.sourceId = next.exercises[index]?.id || exercise.sourceId;
+    });
+    saveTemplates();
+    saveSession();
+    renderAll();
+    openPanel("queue");
+    flashButton($("overwritePlan"), "已覆盖");
+  }
+
+  function saveAsNewTemplate() {
+    const name = cleanText(window.prompt("新计划名称", `${state.session.templateName || "训练计划"} 副本`));
+    if (!name) return;
+    const next = templateFromSession({ id: uid("tplset") }, name, { freshExerciseIds: true });
+    state.templates.push(next);
+    state.template = next;
+    state.activeTemplateId = next.id;
+    state.session.templateId = next.id;
+    state.session.templateName = next.name;
+    state.session.plan.forEach((exercise, index) => {
+      exercise.sourceId = next.exercises[index]?.id || exercise.sourceId;
+    });
+    saveTemplates();
+    saveSession();
+    renderAll();
+    openPanel("queue");
+    flashButton($("saveAsPlan"), "已另存");
   }
 
   function startNewSession() {
@@ -708,6 +800,7 @@
     renderSummary();
     renderCurrent();
     renderNextStrip();
+    renderPlanTabs();
     renderQueue();
     renderHistory();
     renderAnalytics();
@@ -830,6 +923,22 @@
   function renderDock() {
     $("dockRecord").disabled = !state.lastRecord;
     $("finishWorkoutDock").disabled = state.session.status === "finished" || state.session.sets.length === 0;
+  }
+
+  function renderPlanTabs() {
+    const list = $("planTabs");
+    if (!list) return;
+    list.innerHTML = state.templates
+      .map(
+        (template) => `
+          <button class="plan-tab ${template.id === state.activeTemplateId ? "active" : ""}" type="button" data-template-id="${template.id}">
+            ${escapeHtml(template.name)}
+          </button>
+        `,
+      )
+      .join("");
+    $("overwritePlan").disabled = !state.session.plan.length;
+    $("saveAsPlan").disabled = !state.session.plan.length;
   }
 
   function renderQueue() {
@@ -1580,6 +1689,8 @@
       version: 1,
       exportedAt: isoNow(),
       template: state.template,
+      templates: state.templates,
+      activeTemplateId: state.activeTemplateId,
       currentSession: state.session?.status === "finished" ? null : state.session,
       history: state.history,
     };
@@ -1643,9 +1754,16 @@
           if (record?.id) merged.set(record.id, record);
         });
         state.history = [...merged.values()].sort((a, b) => new Date(b.finishedAt || b.startedAt).getTime() - new Date(a.finishedAt || a.startedAt).getTime());
-        if (payload.template?.exercises?.length) {
-          state.template = payload.template;
-          saveTemplate();
+        if (Array.isArray(payload.templates) && payload.templates.length) {
+          state.templates = payload.templates.map((template, index) => normalizeTemplate(template, `训练计划 ${index + 1}`)).filter((template) => template.exercises.length);
+          state.activeTemplateId = payload.activeTemplateId || state.templates[0]?.id;
+          setActiveTemplate(state.activeTemplateId);
+          saveTemplates();
+        } else if (payload.template?.exercises?.length) {
+          state.template = normalizeTemplate(payload.template, "训练计划");
+          state.templates = [state.template];
+          state.activeTemplateId = state.template.id;
+          saveTemplates();
         }
         saveHistory();
         renderAll();
@@ -1701,6 +1819,13 @@
     $("closeData").addEventListener("click", () => closePanel("data", true));
     $("closeHistory").addEventListener("click", () => closePanel("history", true));
     $("addExercise").addEventListener("click", () => openExerciseEditor("add"));
+    $("planTabs").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-template-id]");
+      if (!button) return;
+      switchTemplate(button.dataset.templateId);
+    });
+    $("overwritePlan").addEventListener("click", overwriteActiveTemplate);
+    $("saveAsPlan").addEventListener("click", saveAsNewTemplate);
     $("cancelExercise").addEventListener("click", closeExerciseEditor);
     $("exerciseSheet").addEventListener("click", (event) => {
       if (event.target === $("exerciseSheet")) closeExerciseEditor();
@@ -1817,18 +1942,23 @@
   }
 
   function boot() {
-    state.template = loadJson(STORE.template, deepClone(DEFAULT_TEMPLATE));
+    const storedTemplates = loadJson(STORE.templates, null);
+    const legacyTemplate = loadJson(STORE.template, null);
+    state.templates = Array.isArray(storedTemplates) && storedTemplates.length
+      ? storedTemplates.map((template, index) => normalizeTemplate(template, `训练计划 ${index + 1}`)).filter((template) => template.exercises.length)
+      : [normalizeTemplate(legacyTemplate || DEFAULT_TEMPLATE, "全身力量 A")].filter((template) => template.exercises.length);
+    if (!state.templates.length) state.templates = [normalizeTemplate(DEFAULT_TEMPLATE, "全身力量 A")];
+    state.activeTemplateId = loadJson(STORE.activeTemplateId, state.templates[0].id);
+    setActiveTemplate(state.activeTemplateId);
     state.history = loadJson(STORE.history, []);
     state.session = loadJson(STORE.current, null) || createSessionFromTemplate(state.template);
 
-    if (!Array.isArray(state.template.exercises) || !state.template.exercises.length) {
-      state.template = deepClone(DEFAULT_TEMPLATE);
-      saveTemplate();
-    }
-
-    if (!Array.isArray(state.session.plan)) {
+    if (!Array.isArray(state.session.plan) || !state.session.plan.length) {
       state.session = createSessionFromTemplate(state.template);
     }
+    if (!state.session.templateId) state.session.templateId = state.activeTemplateId;
+    if (!state.session.templateName) state.session.templateName = state.template.name;
+    saveTemplates();
 
     bindEvents();
     saveSession();

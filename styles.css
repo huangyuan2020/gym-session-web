@@ -644,6 +644,58 @@ textarea:focus {
   color: var(--primary);
 }
 
+.plan-switcher {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.plan-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.plan-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.plan-tab {
+  flex: 0 0 auto;
+  max-width: 150px;
+  min-height: 34px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-tab.active {
+  border-color: rgba(31, 111, 74, 0.45);
+  background: #eaf4ec;
+  color: var(--primary);
+}
+
+.plan-save-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.plan-save-actions .plain-button {
+  min-height: 34px;
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
 .finish-section {
   padding: 12px;
   background: transparent;
