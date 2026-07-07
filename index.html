@@ -20,16 +20,26 @@
           <img src="./app-icon.svg" alt="" class="brand-mark" />
           <div>
             <div class="brand-title">力量记录</div>
-            <div class="brand-subtitle" id="sessionDate"></div>
           </div>
         </div>
-        <button class="icon-button" id="historyToggle" type="button" title="历史记录" aria-label="历史记录">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 12a9 9 0 1 0 3-6.7" />
-            <path d="M3 4v5h5" />
-            <path d="M12 7v5l3 2" />
-          </svg>
-        </button>
+        <div class="topbar-actions">
+          <button class="icon-button" id="dataToggle" type="button" title="训练数据" aria-label="训练数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 3v18h18" />
+              <path d="m7 15 4-4 3 3 5-7" />
+            </svg>
+          </button>
+          <button class="icon-button" id="historyToggle" type="button" title="历史记录" aria-label="历史记录">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7" />
+              <path d="M3 4v5h5" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </button>
+          <button class="finish-top-button" id="finishWorkoutTop" type="button" title="完成训练" aria-label="完成训练">
+            完成
+          </button>
+        </div>
       </header>
 
       <main class="main-stack">
@@ -53,18 +63,13 @@
         </section>
 
         <section class="current-panel" id="currentPanel" aria-label="当前训练">
-          <div class="panel-kicker">
-            <span id="currentKicker">下一个动作</span>
-            <button class="ghost-button" id="focusQueue" type="button">换动作</button>
+          <div class="current-title-row">
+            <h1 id="currentName">加载中</h1>
+            <div class="set-line" id="currentSetLine">第 1 / 1 组</div>
           </div>
-          <h1 id="currentName">加载中</h1>
-          <div class="set-line" id="currentSetLine">第 1 / 1 组</div>
 
           <div class="timer-block" aria-live="polite">
             <div class="timer-value" id="mainTimer">00:00</div>
-            <div class="rest-meter" id="restMeter" aria-hidden="true">
-              <span id="restMeterBar"></span>
-            </div>
           </div>
 
           <div class="current-inputs">
@@ -97,38 +102,36 @@
           <div class="action-row">
             <button class="primary-action" id="primaryAction" type="button">开始</button>
             <button class="secondary-action" id="secondaryAction" type="button">跳过休息</button>
+            <button class="icon-button compact-action" id="undoAction" type="button" title="撤销" aria-label="撤销">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 14 4 9l5-5" />
+                <path d="M4 9h10a6 6 0 0 1 0 12h-2" />
+              </svg>
+            </button>
+            <button class="icon-button compact-action" id="skipExercise" type="button" title="跳过当前动作" aria-label="跳过当前动作">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 4 8 8-8 8V4Z" />
+                <path d="M19 5v14" />
+              </svg>
+            </button>
           </div>
 
-          <button class="next-strip" id="nextStrip" type="button">
-            <span id="nextStripLabel">接下来</span>
-            <strong id="nextStripName">加载中</strong>
-          </button>
         </section>
 
         <section class="queue-section mobile-panel" id="queueSection" aria-label="训练队列">
           <div class="section-heading">
             <h2>训练队列</h2>
+            <div class="plan-switcher">
+              <div class="plan-tabs" id="planTabs" aria-label="训练计划"></div>
+            </div>
             <div class="heading-actions">
               <button class="icon-text-button" id="addExercise" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 5v14" />
                   <path d="M5 12h14" />
                 </svg>
-                <span>添加</span>
+                <span>加动作</span>
               </button>
-              <button class="icon-button mobile-only" id="closeQueue" type="button" title="关闭计划" aria-label="关闭计划">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="plan-switcher">
-            <div class="plan-tabs" id="planTabs" aria-label="训练计划"></div>
-            <div class="plan-save-actions">
-              <button class="plain-button" id="overwritePlan" type="button">覆盖本计划</button>
-              <button class="plain-button" id="saveAsPlan" type="button">另存为新计划</button>
             </div>
           </div>
           <div class="exercise-list" id="exerciseList"></div>
@@ -212,50 +215,6 @@
 
     <div class="mobile-scrim" id="mobileScrim" aria-hidden="true"></div>
 
-    <nav class="mobile-dock" aria-label="快速操作">
-      <button id="dockPlan" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8 6h13" />
-          <path d="M8 12h13" />
-          <path d="M8 18h13" />
-          <path d="M3 6h.01" />
-          <path d="M3 12h.01" />
-          <path d="M3 18h.01" />
-        </svg>
-        <span>计划</span>
-      </button>
-      <button id="dockRecord" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <path d="M14 2v6h6" />
-          <path d="M9 13h6" />
-          <path d="M9 17h6" />
-        </svg>
-        <span>记录</span>
-      </button>
-      <button id="dockData" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 3v18h18" />
-          <path d="m7 15 4-4 3 3 5-7" />
-        </svg>
-        <span>数据</span>
-      </button>
-      <button id="dockHistory" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 3-6.7" />
-          <path d="M3 4v5h5" />
-          <path d="M12 7v5l3 2" />
-        </svg>
-        <span>历史</span>
-      </button>
-      <button class="dock-finish" id="finishWorkoutDock" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-        <span>完成</span>
-      </button>
-    </nav>
-
     <div class="sheet-backdrop hidden" id="exerciseSheet" aria-hidden="true">
       <form class="sheet" id="exerciseForm">
         <div class="sheet-grip"></div>
@@ -292,6 +251,27 @@
         </div>
         <button class="primary-action compact" id="saveExercise" type="submit">保存</button>
       </form>
+    </div>
+
+    <div class="sheet-backdrop hidden" id="planSaveSheet" aria-hidden="true">
+      <div class="sheet plan-save-sheet" role="dialog" aria-modal="true" aria-labelledby="planSaveTitle">
+        <div class="sheet-grip"></div>
+        <div class="section-heading">
+          <h2 id="planSaveTitle">保存计划变化？</h2>
+          <button class="icon-button" id="dismissPlanSave" type="button" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="sheet-copy" id="planSaveMessage">训练队列里的动作有增减。</p>
+        <div class="plan-save-dialog-actions">
+          <button class="primary-action compact" id="confirmOverwritePlan" type="button">覆盖本计划</button>
+          <button class="secondary-action" id="confirmSaveAsPlan" type="button">另存为新计划</button>
+          <button class="plain-button" id="skipPlanSave" type="button">暂不保存</button>
+        </div>
+      </div>
     </div>
 
     <script src="./app.js" defer></script>

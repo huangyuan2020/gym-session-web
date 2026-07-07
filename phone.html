@@ -99,6 +99,30 @@ svg {
   border-bottom: 1px solid rgba(217, 224, 214, 0.7);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.topbar-actions .icon-button {
+  width: 38px;
+  min-height: 38px;
+}
+
+.topbar-actions .finish-top-button {
+  min-height: 38px;
+  border-radius: var(--radius);
+  padding: 0 12px;
+  border: 1px solid rgba(31, 111, 74, 0.42);
+  border-color: rgba(31, 111, 74, 0.42);
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -123,19 +147,9 @@ svg {
   white-space: nowrap;
 }
 
-.brand-subtitle {
-  min-height: 18px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .main-stack {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .summary-strip {
@@ -197,6 +211,25 @@ svg {
   gap: 10px;
 }
 
+.current-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.queue-section .section-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.queue-section .section-heading h2 {
+  white-space: nowrap;
+}
+
 .heading-actions {
   display: flex;
   align-items: center;
@@ -211,6 +244,7 @@ svg {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
+  justify-content: flex-end;
 }
 
 h1,
@@ -220,7 +254,7 @@ h2 {
 }
 
 h1 {
-  margin-top: 8px;
+  margin: 0;
   font-size: 34px;
   line-height: 1.08;
   word-break: break-word;
@@ -232,10 +266,11 @@ h2 {
 }
 
 .set-line {
-  margin-top: 7px;
+  margin-top: 2px;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.35;
+  white-space: nowrap;
 }
 
 .timer-block {
@@ -249,6 +284,10 @@ h2 {
 
 .current-panel.no-exercise .action-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.current-panel.no-exercise .compact-action {
+  display: none;
 }
 
 .timer-value {
@@ -266,23 +305,6 @@ h2 {
   font-size: 52px;
   font-weight: 850;
   line-height: 1;
-}
-
-.rest-meter {
-  height: 6px;
-  margin-top: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e7ece3;
-}
-
-.rest-meter span {
-  display: block;
-  width: 0%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--gold), var(--accent));
-  transition: width 180ms ease;
 }
 
 .current-inputs,
@@ -377,9 +399,28 @@ textarea:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(82px, 0.9fr) 42px 42px;
+  align-items: stretch;
+  gap: 8px;
   margin-top: 14px;
+}
+
+.compact-action {
+  width: 42px;
+  min-height: 42px;
+  border-color: #d5ded3;
+  background: #f7faf5;
+  color: var(--muted);
+}
+
+.compact-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.compact-action:not(:disabled):active {
+  background: #e9f0e6;
+  color: var(--primary);
 }
 
 .next-strip {
@@ -497,11 +538,17 @@ textarea:focus {
   color: var(--primary);
 }
 
-.queue-section,
 .record-section,
 .data-section,
 .history-section {
   padding: 14px;
+}
+
+.queue-section {
+  max-height: none;
+  overflow: auto;
+  padding: 10px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .exercise-list,
@@ -510,6 +557,24 @@ textarea:focus {
   display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+
+.queue-section .exercise-list {
+  position: relative;
+  gap: 6px;
+  margin-top: 10px;
+  padding-left: 14px;
+}
+
+.queue-section .exercise-list::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: #d7dfd4;
 }
 
 .exercise-row,
@@ -531,6 +596,30 @@ textarea:focus {
     box-shadow 180ms ease;
 }
 
+.queue-section .exercise-row {
+  border-color: #e1e7de;
+  background: transparent;
+}
+
+.queue-section .exercise-row::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  z-index: 2;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #a9b6a7;
+  box-shadow: 0 0 0 1px #d7dfd4;
+  transform: translateY(-50%);
+}
+
+.queue-section .exercise-row.active::before {
+  background: var(--primary);
+}
+
 .exercise-card {
   position: relative;
   z-index: 1;
@@ -547,9 +636,19 @@ textarea:focus {
     box-shadow 180ms ease;
 }
 
+.queue-section .exercise-card {
+  min-height: 44px;
+  padding: 6px 8px;
+  background: #fbfcfa;
+}
+
 .exercise-row.active {
   border-color: rgba(31, 111, 74, 0.45);
   background: #e6efe8;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.queue-section .exercise-row.active {
   box-shadow: inset 3px 0 0 var(--primary);
 }
 
@@ -558,12 +657,15 @@ textarea:focus {
 }
 
 .exercise-row.done {
-  opacity: 0.78;
+  opacity: 0.72;
 }
 
 .exercise-main {
   display: grid;
-  gap: 3px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
   min-width: 0;
   min-height: 44px;
   padding: 0;
@@ -572,7 +674,32 @@ textarea:focus {
   text-align: left;
 }
 
+.exercise-status {
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border-radius: 6px;
+  background: #eef3eb;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.exercise-row.active .exercise-status {
+  background: var(--primary);
+  color: #fff;
+}
+
+.exercise-row.done .exercise-status {
+  background: #e7ece3;
+  color: #879184;
+}
+
 .exercise-title-line {
+  grid-column: 2 / -1;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -586,6 +713,27 @@ textarea:focus {
   line-height: 1.25;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+
+.queue-section .exercise-title {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.queue-section .exercise-title-line {
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.queue-section .exercise-badge {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.queue-section .exercise-meta {
+  grid-column: 2 / -1;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .exercise-badge {
@@ -658,16 +806,14 @@ textarea:focus {
 }
 
 .plan-switcher {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
+  min-width: 0;
 }
 
 .plan-tabs {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding-bottom: 0;
   scrollbar-width: none;
 }
 
@@ -677,7 +823,7 @@ textarea:focus {
 
 .plan-tab {
   flex: 0 0 auto;
-  max-width: 150px;
+  max-width: 132px;
   min-height: 34px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -707,6 +853,18 @@ textarea:focus {
   min-height: 34px;
   padding-inline: 8px;
   font-size: 12px;
+}
+
+.queue-section.pick-mode {
+  border-color: rgba(226, 163, 44, 0.55);
+}
+
+.queue-section.pick-mode .exercise-card {
+  background: #fffaf0;
+}
+
+.queue-section.pick-mode .exercise-row.active .exercise-card {
+  background: #f4fbf6;
 }
 
 .finish-section {
@@ -1196,6 +1354,23 @@ textarea {
   background: #c8d2c7;
 }
 
+.sheet-copy {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.plan-save-dialog-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.plan-save-dialog-actions .plain-button {
+  min-height: 40px;
+}
+
 .full-label {
   margin-top: 12px;
 }
@@ -1214,40 +1389,30 @@ textarea {
   display: none !important;
 }
 
-.mobile-scrim,
-.mobile-dock {
+.mobile-scrim {
   display: none;
 }
 
 @media (min-width: 680px) {
   .app-shell {
+    width: min(100%, 760px);
     padding-inline: 18px;
   }
 
   .main-stack {
-    grid-template-columns: minmax(0, 1fr) 300px;
-    align-items: start;
-  }
-
-  .summary-strip,
-  .current-panel,
-  .record-section,
-  .data-section,
-  .history-section {
-    grid-column: 1;
-  }
-
-  .queue-section,
-  .finish-section {
-    grid-column: 2;
-  }
-
-  .queue-section {
-    grid-row: 1 / span 3;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   h1 {
     font-size: 40px;
+  }
+
+  .queue-section .exercise-title {
+    font-size: 15px;
+  }
+
+  .queue-section .exercise-meta {
+    font-size: 12px;
   }
 }
 
@@ -1276,6 +1441,19 @@ textarea {
   .record-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .queue-section .section-heading {
+    gap: 6px;
+  }
+
+  .queue-section .icon-text-button {
+    width: 34px;
+    padding: 0;
+  }
+
+  .queue-section .icon-text-button span {
+    display: none;
+  }
 }
 
 @media (max-width: 679px) {
@@ -1285,7 +1463,7 @@ textarea {
 
   .app-shell {
     width: 100%;
-    padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 86px);
+    padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 18px);
   }
 
   .topbar {
@@ -1302,11 +1480,6 @@ textarea {
     font-size: 16px;
   }
 
-  .brand-subtitle {
-    max-width: 220px;
-    font-size: 11px;
-  }
-
   .summary-strip > div {
     padding: 7px 7px;
   }
@@ -1320,43 +1493,99 @@ textarea {
   }
 
   .current-panel {
-    padding: 14px;
+    padding: 9px;
   }
 
   h1 {
-    margin-top: 6px;
-    font-size: 31px;
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.1;
+  }
+
+  .panel-kicker {
+    font-size: 12px;
+  }
+
+  .set-line {
+    margin-top: 1px;
+    font-size: 12px;
   }
 
   .timer-block {
-    margin-top: 12px;
+    margin-top: 8px;
   }
 
   .timer-value {
-    min-height: 72px;
-    font-size: 46px;
+    min-height: 44px;
+    font-size: 31px;
   }
 
   .current-inputs {
-    gap: 8px;
-    margin-top: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
   }
 
   input {
-    height: 42px;
+    height: 38px;
+    padding-inline: 6px;
   }
 
   .stepper input {
-    height: 40px;
+    height: 36px;
   }
 
   .step-button {
-    height: 40px;
+    width: 30px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .stepper {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+  }
+
+  label {
+    gap: 4px;
+    font-size: 11px;
   }
 
   .primary-action {
-    min-height: 54px;
-    font-size: 19px;
+    min-height: 42px;
+    font-size: 17px;
+  }
+
+  .secondary-action {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+
+  .ghost-button {
+    min-height: 32px;
+    padding-inline: 9px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .action-row {
+    grid-template-columns: minmax(0, 1.3fr) minmax(76px, 0.85fr) 38px 38px;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .compact-action {
+    width: 38px;
+    min-height: 38px;
+  }
+
+  .next-strip {
+    min-height: 34px;
+    margin-top: 7px;
+    padding-inline: 9px;
+  }
+
+  .next-strip strong {
+    font-size: 12px;
   }
 
   .finish-section {
@@ -1409,11 +1638,46 @@ textarea {
   }
 
   .queue-section {
-    padding: 12px;
+    position: static;
+    z-index: auto;
+    max-height: none;
+    overflow: auto;
+    padding: 10px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+  }
+
+  .queue-section h2 {
+    font-size: 14px;
+  }
+
+  .queue-section .icon-text-button {
+    min-height: 32px;
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .queue-section .plan-tabs {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+  }
+
+  .queue-section .plan-tab {
+    width: auto;
+    max-width: 112px;
+    min-height: 30px;
+    padding-inline: 9px;
+    font-size: 11px;
+    text-align: left;
   }
 
   .exercise-list {
-    max-height: calc(74dvh - 122px);
+    max-height: none;
     overflow: auto;
     padding-right: 1px;
   }
@@ -1463,49 +1727,6 @@ textarea {
     min-height: 148px;
   }
 
-  .mobile-dock {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: calc(env(safe-area-inset-bottom) + 10px);
-    z-index: 22;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
-    padding: 8px;
-    border: 1px solid rgba(203, 214, 204, 0.9);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 12px 34px rgba(25, 38, 28, 0.18);
-    backdrop-filter: blur(18px);
-  }
-
-  .mobile-dock button {
-    display: grid;
-    place-items: center;
-    gap: 3px;
-    min-width: 0;
-    min-height: 52px;
-    border-radius: var(--radius);
-    background: #f3f6f1;
-    color: var(--ink);
-    font-size: 11px;
-    font-weight: 850;
-  }
-
-  .mobile-dock svg {
-    width: 19px;
-    height: 19px;
-  }
-
-  .mobile-dock .dock-finish {
-    background: var(--primary);
-    color: #fff;
-  }
-
-  .mobile-dock button:disabled {
-    opacity: 0.38;
-  }
 }
 
     </style>
@@ -1517,16 +1738,26 @@ textarea {
           <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%231f6f4a%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23e2a32c%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" alt="" class="brand-mark" />
           <div>
             <div class="brand-title">力量记录</div>
-            <div class="brand-subtitle" id="sessionDate"></div>
           </div>
         </div>
-        <button class="icon-button" id="historyToggle" type="button" title="历史记录" aria-label="历史记录">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 12a9 9 0 1 0 3-6.7" />
-            <path d="M3 4v5h5" />
-            <path d="M12 7v5l3 2" />
-          </svg>
-        </button>
+        <div class="topbar-actions">
+          <button class="icon-button" id="dataToggle" type="button" title="训练数据" aria-label="训练数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 3v18h18" />
+              <path d="m7 15 4-4 3 3 5-7" />
+            </svg>
+          </button>
+          <button class="icon-button" id="historyToggle" type="button" title="历史记录" aria-label="历史记录">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7" />
+              <path d="M3 4v5h5" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </button>
+          <button class="finish-top-button" id="finishWorkoutTop" type="button" title="完成训练" aria-label="完成训练">
+            完成
+          </button>
+        </div>
       </header>
 
       <main class="main-stack">
@@ -1550,18 +1781,13 @@ textarea {
         </section>
 
         <section class="current-panel" id="currentPanel" aria-label="当前训练">
-          <div class="panel-kicker">
-            <span id="currentKicker">下一个动作</span>
-            <button class="ghost-button" id="focusQueue" type="button">换动作</button>
+          <div class="current-title-row">
+            <h1 id="currentName">加载中</h1>
+            <div class="set-line" id="currentSetLine">第 1 / 1 组</div>
           </div>
-          <h1 id="currentName">加载中</h1>
-          <div class="set-line" id="currentSetLine">第 1 / 1 组</div>
 
           <div class="timer-block" aria-live="polite">
             <div class="timer-value" id="mainTimer">00:00</div>
-            <div class="rest-meter" id="restMeter" aria-hidden="true">
-              <span id="restMeterBar"></span>
-            </div>
           </div>
 
           <div class="current-inputs">
@@ -1594,38 +1820,36 @@ textarea {
           <div class="action-row">
             <button class="primary-action" id="primaryAction" type="button">开始</button>
             <button class="secondary-action" id="secondaryAction" type="button">跳过休息</button>
+            <button class="icon-button compact-action" id="undoAction" type="button" title="撤销" aria-label="撤销">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 14 4 9l5-5" />
+                <path d="M4 9h10a6 6 0 0 1 0 12h-2" />
+              </svg>
+            </button>
+            <button class="icon-button compact-action" id="skipExercise" type="button" title="跳过当前动作" aria-label="跳过当前动作">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 4 8 8-8 8V4Z" />
+                <path d="M19 5v14" />
+              </svg>
+            </button>
           </div>
 
-          <button class="next-strip" id="nextStrip" type="button">
-            <span id="nextStripLabel">接下来</span>
-            <strong id="nextStripName">加载中</strong>
-          </button>
         </section>
 
         <section class="queue-section mobile-panel" id="queueSection" aria-label="训练队列">
           <div class="section-heading">
             <h2>训练队列</h2>
+            <div class="plan-switcher">
+              <div class="plan-tabs" id="planTabs" aria-label="训练计划"></div>
+            </div>
             <div class="heading-actions">
               <button class="icon-text-button" id="addExercise" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 5v14" />
                   <path d="M5 12h14" />
                 </svg>
-                <span>添加</span>
+                <span>加动作</span>
               </button>
-              <button class="icon-button mobile-only" id="closeQueue" type="button" title="关闭计划" aria-label="关闭计划">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="plan-switcher">
-            <div class="plan-tabs" id="planTabs" aria-label="训练计划"></div>
-            <div class="plan-save-actions">
-              <button class="plain-button" id="overwritePlan" type="button">覆盖本计划</button>
-              <button class="plain-button" id="saveAsPlan" type="button">另存为新计划</button>
             </div>
           </div>
           <div class="exercise-list" id="exerciseList"></div>
@@ -1709,50 +1933,6 @@ textarea {
 
     <div class="mobile-scrim" id="mobileScrim" aria-hidden="true"></div>
 
-    <nav class="mobile-dock" aria-label="快速操作">
-      <button id="dockPlan" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M8 6h13" />
-          <path d="M8 12h13" />
-          <path d="M8 18h13" />
-          <path d="M3 6h.01" />
-          <path d="M3 12h.01" />
-          <path d="M3 18h.01" />
-        </svg>
-        <span>计划</span>
-      </button>
-      <button id="dockRecord" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <path d="M14 2v6h6" />
-          <path d="M9 13h6" />
-          <path d="M9 17h6" />
-        </svg>
-        <span>记录</span>
-      </button>
-      <button id="dockData" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 3v18h18" />
-          <path d="m7 15 4-4 3 3 5-7" />
-        </svg>
-        <span>数据</span>
-      </button>
-      <button id="dockHistory" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 3-6.7" />
-          <path d="M3 4v5h5" />
-          <path d="M12 7v5l3 2" />
-        </svg>
-        <span>历史</span>
-      </button>
-      <button class="dock-finish" id="finishWorkoutDock" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-        <span>完成</span>
-      </button>
-    </nav>
-
     <div class="sheet-backdrop hidden" id="exerciseSheet" aria-hidden="true">
       <form class="sheet" id="exerciseForm">
         <div class="sheet-grip"></div>
@@ -1789,6 +1969,27 @@ textarea {
         </div>
         <button class="primary-action compact" id="saveExercise" type="submit">保存</button>
       </form>
+    </div>
+
+    <div class="sheet-backdrop hidden" id="planSaveSheet" aria-hidden="true">
+      <div class="sheet plan-save-sheet" role="dialog" aria-modal="true" aria-labelledby="planSaveTitle">
+        <div class="sheet-grip"></div>
+        <div class="section-heading">
+          <h2 id="planSaveTitle">保存计划变化？</h2>
+          <button class="icon-button" id="dismissPlanSave" type="button" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="sheet-copy" id="planSaveMessage">训练队列里的动作有增减。</p>
+        <div class="plan-save-dialog-actions">
+          <button class="primary-action compact" id="confirmOverwritePlan" type="button">覆盖本计划</button>
+          <button class="secondary-action" id="confirmSaveAsPlan" type="button">另存为新计划</button>
+          <button class="plain-button" id="skipPlanSave" type="button">暂不保存</button>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -1837,6 +2038,8 @@ textarea {
     reopenQueueAfterEdit: false,
     queuePointer: null,
     historyPointer: null,
+    undoSnapshot: null,
+    queuePickMode: false,
     suppressQueueClickUntil: 0,
     suppressHistoryClickUntil: 0,
   };
@@ -2042,6 +2245,22 @@ textarea {
     saveJson(STORE.history, state.history.slice(0, 100));
   }
 
+  function pushUndo(label) {
+    if (!state.session || state.session.status === "finished") return;
+    state.undoSnapshot = {
+      label,
+      session: deepClone(state.session),
+    };
+  }
+
+  function undoLastAction() {
+    if (!state.undoSnapshot?.session) return;
+    state.session = deepClone(state.undoSnapshot.session);
+    state.undoSnapshot = null;
+    saveSession();
+    renderAll();
+  }
+
   function completedCount(exerciseId) {
     return state.session.sets.filter((set) => set.exerciseId === exerciseId).length;
   }
@@ -2073,6 +2292,23 @@ textarea {
     const after = currentIndex >= 0 ? plan.slice(currentIndex + 1) : plan;
     const before = currentIndex >= 0 ? plan.slice(0, currentIndex + 1) : [];
     return [...after, ...before].find((exercise) => completedCount(exercise.id) < cleanNumber(exercise.sets, 0, true)) || null;
+  }
+
+  function nextTargetInfo() {
+    const current = getCurrentExercise();
+    const upcoming = findNextAfterCurrent();
+    if (!upcoming) return null;
+    const isSameExercise = current?.id === upcoming.id;
+    const completed = completedCount(upcoming.id);
+    const planned = cleanNumber(upcoming.sets, 0, true);
+    return {
+      exercise: upcoming,
+      isSameExercise,
+      completed,
+      planned,
+      setNumber: completed + 1,
+      label: isSameExercise && completed > 0 ? "下一组" : "下个动作",
+    };
   }
 
   function totalPlannedSets() {
@@ -2144,6 +2380,7 @@ textarea {
       return;
     }
 
+    pushUndo("开始");
     hydrateDraft(false);
     const now = isoNow();
     if (!state.session.startedAt) state.session.startedAt = now;
@@ -2161,6 +2398,7 @@ textarea {
     const exercise = getCurrentExercise();
     if (!exercise) return;
 
+    pushUndo("完成一组");
     hydrateDraft(false);
     const draft = state.session.currentDraft || {};
     const now = isoNow();
@@ -2213,6 +2451,7 @@ textarea {
   }
 
   function beginNextSet() {
+    pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
     if (state.session.phase === "rest") finishRest();
 
     const next = findNextAfterCurrent();
@@ -2230,10 +2469,12 @@ textarea {
     renderAll();
   }
 
-  function setActiveExercise(exerciseId) {
+  function setActiveExercise(exerciseId, options = {}) {
+    const { keepPanelOpen = false, undo = true } = options;
     const exists = state.session.plan.some((exercise) => exercise.id === exerciseId);
     if (!exists) return;
 
+    if (undo) pushUndo("换动作");
     if (state.session.phase === "rest") {
       finishRest();
       state.session.phase = "ready";
@@ -2242,11 +2483,39 @@ textarea {
     }
 
     state.session.currentExerciseId = exerciseId;
+    const exercise = getCurrentExercise();
+    if (exercise && completedCount(exercise.id) >= cleanNumber(exercise.sets, 0, true)) {
+      exercise.sets = completedCount(exercise.id) + 1;
+    }
     hydrateDraft(true);
     saveSession();
-    closePanels();
+    state.queuePickMode = false;
+    if (!keepPanelOpen) closePanels();
     renderAll();
     $("currentName").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function skipCurrentExercise() {
+    const exercise = getCurrentExercise();
+    if (!exercise) return;
+    pushUndo("跳过动作");
+    if (state.session.phase === "rest") finishRest();
+    if (state.session.phase === "work") {
+      state.session.workStartedAt = null;
+    }
+    exercise.sets = completedCount(exercise.id);
+    const next = findNextAfterCurrent();
+    if (next) {
+      state.session.currentExerciseId = next.id;
+      state.session.phase = "ready";
+      hydrateDraft(true);
+    } else {
+      state.session.currentExerciseId = null;
+      state.session.currentDraft = null;
+      state.session.phase = "done";
+    }
+    saveSession();
+    renderAll();
   }
 
   function finishWorkout() {
@@ -2355,6 +2624,7 @@ textarea {
     ensurePointer();
     saveSession();
     renderAll();
+    openPlanSavePrompt(`已删除 ${exercise.name}，要保存到训练计划吗？`);
   }
 
   function openExerciseEditor(mode, exerciseId = null) {
@@ -2394,6 +2664,7 @@ textarea {
       restSec: cleanNumber($("exerciseRestInput").value, 60, true),
     };
 
+    const isAddingExercise = state.editor.mode !== "edit";
     if (state.editor.mode === "edit") {
       const target = state.session.plan.find((item) => item.id === state.editor.exerciseId);
       if (target) {
@@ -2419,6 +2690,7 @@ textarea {
     state.reopenQueueAfterEdit = false;
     renderAll();
     if (shouldReopenQueue) openPanel("queue");
+    if (isAddingExercise) openPlanSavePrompt("已添加动作，要保存到训练计划吗？");
   }
 
   function updateCurrentDraft(field, rawValue) {
@@ -2488,7 +2760,7 @@ textarea {
     saveSession();
     renderAll();
     openPanel("queue");
-    flashButton($("overwritePlan"), "已覆盖");
+    closePlanSavePrompt();
   }
 
   function saveAsNewTemplate() {
@@ -2507,7 +2779,22 @@ textarea {
     saveSession();
     renderAll();
     openPanel("queue");
-    flashButton($("saveAsPlan"), "已另存");
+    closePlanSavePrompt();
+  }
+
+  function openPlanSavePrompt(message = "训练队列里的动作有增减，要保存到计划吗？") {
+    const sheet = $("planSaveSheet");
+    if (!sheet) return;
+    $("planSaveMessage").textContent = message;
+    sheet.classList.remove("hidden");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closePlanSavePrompt() {
+    const sheet = $("planSaveSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
   }
 
   function startNewSession() {
@@ -2545,6 +2832,7 @@ textarea {
 
   function closePanels(options = {}) {
     const { hideSecondary = false } = options;
+    state.queuePickMode = false;
     ["queue", "record", "data", "history"].forEach((name) => {
       const panel = panelByName(name);
       if (!panel) return;
@@ -2558,6 +2846,7 @@ textarea {
   function closePanel(name, hide = false) {
     const panel = panelByName(name);
     if (!panel) return;
+    if (name === "queue") state.queuePickMode = false;
     panel.classList.remove("sheet-open");
     if (hide) panel.classList.add("hidden");
     const stillOpen = ["queue", "record", "data", "history"].some((key) => panelByName(key)?.classList.contains("sheet-open"));
@@ -2570,6 +2859,7 @@ textarea {
   function openPanel(name) {
     const panel = panelByName(name);
     if (!panel) return;
+    if (name !== "queue") state.queuePickMode = false;
 
     ["queue", "record", "data", "history"].forEach((key) => {
       if (key !== name) panelByName(key)?.classList.remove("sheet-open");
@@ -2577,6 +2867,13 @@ textarea {
 
     if (name === "data") renderAnalytics();
     panel.classList.remove("hidden");
+
+    if (name === "queue") {
+      panel.classList.remove("sheet-open");
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+
     panel.classList.add("sheet-open");
 
     if (isMobileLayout()) {
@@ -2586,6 +2883,18 @@ textarea {
     }
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openQueuePickMode() {
+    state.queuePickMode = true;
+    openPanel("queue");
+    renderQueue();
+  }
+
+  function openQueueEditMode() {
+    state.queuePickMode = false;
+    openPanel("queue");
+    renderQueue();
   }
 
   function renderAll() {
@@ -2604,8 +2913,6 @@ textarea {
   }
 
   function renderHeader() {
-    const started = state.session.startedAt ? formatDateTime(state.session.startedAt) : formatDateTime(state.session.createdAt);
-    $("sessionDate").textContent = `${state.session.templateName || "全身力量"} · ${started}`;
   }
 
   function phaseText() {
@@ -2626,13 +2933,15 @@ textarea {
     const exercise = getCurrentExercise();
     const primary = $("primaryAction");
     const secondary = $("secondaryAction");
+    const undoButton = $("undoAction");
+    const skipButton = $("skipExercise");
     const finish = $("finishWorkout");
-    const finishDock = $("finishWorkoutDock");
+    const finishTop = $("finishWorkoutTop");
     $("currentPanel").classList.toggle("no-exercise", !exercise);
 
     if (!exercise) {
       const finishDisabled = state.session.status === "finished" || state.session.sets.length === 0;
-      $("currentKicker").textContent = state.session.phase === "done" ? "全部完成" : "训练队列";
+      if ($("currentKicker")) $("currentKicker").textContent = state.session.phase === "done" ? "全部完成" : "训练队列";
       $("currentName").textContent = state.session.phase === "done" ? "可以完成训练" : "先添加动作";
       $("currentSetLine").textContent =
         state.session.status === "finished"
@@ -2647,8 +2956,10 @@ textarea {
       primary.disabled = false;
       secondary.textContent = "训练队列";
       secondary.disabled = false;
+      undoButton.disabled = !state.undoSnapshot;
+      skipButton.disabled = true;
       finish.disabled = finishDisabled;
-      finishDock.disabled = finishDisabled;
+      finishTop.disabled = finishDisabled;
       return;
     }
 
@@ -2659,17 +2970,17 @@ textarea {
     const lastSet = state.session.sets.find((set) => set.id === state.session.lastSetLogId);
 
     if (state.session.phase === "work") {
-      $("currentKicker").textContent = "当前组";
+      if ($("currentKicker")) $("currentKicker").textContent = "当前组";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "休息";
       secondary.textContent = "换动作";
     } else if (state.session.phase === "rest") {
-      $("currentKicker").textContent = "休息中";
+      if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       primary.textContent = "下一组";
       secondary.textContent = "跳过休息";
     } else {
-      $("currentKicker").textContent = "下一个动作";
+      if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "开始";
       secondary.textContent = "换动作";
@@ -2682,13 +2993,16 @@ textarea {
     $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
     secondary.disabled = false;
+    undoButton.disabled = !state.undoSnapshot;
+    skipButton.disabled = state.session.status === "finished" || !exercise;
     finish.disabled = false;
-    finishDock.disabled = false;
+    finishTop.disabled = false;
   }
 
   function renderNextStrip() {
-    const exercise = getCurrentExercise();
     const nextStrip = $("nextStrip");
+    if (!nextStrip) return;
+    const exercise = getCurrentExercise();
     const label = $("nextStripLabel");
     const name = $("nextStripName");
 
@@ -2699,24 +3013,22 @@ textarea {
       return;
     }
 
-    const upcoming = findNextAfterCurrent();
-    if (!upcoming) {
+    const target = nextTargetInfo();
+    if (!target) {
       label.textContent = "接下来";
       name.textContent = "全部完成";
       nextStrip.disabled = false;
       return;
     }
 
-    const nextSet = completedCount(upcoming.id) + 1;
-    const planned = cleanNumber(upcoming.sets, 0, true);
-    label.textContent = state.session.phase === "rest" ? "休息后" : "当前";
-    name.textContent = `${upcoming.name} · 第 ${Math.min(nextSet, planned)}/${planned} 组`;
+    label.textContent = state.session.phase === "rest" ? `休息后 · ${target.label}` : target.label;
+    name.textContent = `${target.exercise.name} · 第 ${Math.min(target.setNumber, target.planned)}/${target.planned} 组`;
     nextStrip.disabled = false;
   }
 
   function renderDock() {
-    $("dockRecord").disabled = !state.lastRecord;
-    $("finishWorkoutDock").disabled = state.session.status === "finished" || state.session.sets.length === 0;
+    if ($("dockRecord")) $("dockRecord").disabled = !state.lastRecord;
+    $("finishWorkoutTop").disabled = state.session.status === "finished" || state.session.sets.length === 0;
   }
 
   function renderPlanTabs() {
@@ -2731,12 +3043,13 @@ textarea {
         `,
       )
       .join("");
-    $("overwritePlan").disabled = !state.session.plan.length;
-    $("saveAsPlan").disabled = !state.session.plan.length;
+    if ($("confirmOverwritePlan")) $("confirmOverwritePlan").disabled = !state.session.plan.length;
+    if ($("confirmSaveAsPlan")) $("confirmSaveAsPlan").disabled = !state.session.plan.length;
   }
 
   function renderQueue() {
     const list = $("exerciseList");
+    $("queueSection").classList.toggle("pick-mode", true);
     if (!state.session.plan.length) {
       list.innerHTML = '<div class="empty-state">没有动作</div>';
       return;
@@ -2751,18 +3064,20 @@ textarea {
         const reps = cleanNumber(exercise.reps, 0, true);
         const weight = cleanNumber(exercise.weight, 0);
         const rest = cleanNumber(exercise.restSec, 0, true);
+        const statusText = isActive ? "当前" : isDone ? "完成" : "待做";
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
             <div class="swipe-actions" aria-hidden="true">
               <button class="swipe-action delete" type="button" data-action="delete">删除</button>
             </div>
             <div class="exercise-card">
-              <button class="exercise-main" type="button" data-action="edit">
+              <button class="exercise-main" type="button" data-action="pick">
+                <span class="exercise-status">${statusText}</span>
                 <div class="exercise-title-line">
                   <div class="exercise-title">${escapeHtml(exercise.name)}</div>
                   <span class="exercise-badge">${completed}/${planned}</span>
                 </div>
-                <div class="exercise-meta">${planned}组 · ${reps}次 · ${weight}kg · ${rest}s</div>
+                <div class="exercise-meta">${reps}次 · ${weight}kg · 休${rest}s</div>
               </button>
             </div>
           </article>
@@ -3428,7 +3743,6 @@ textarea {
 
     if (state.session.phase === "work") {
       $("mainTimer").textContent = formatClock(secondsBetween(state.session.workStartedAt, now));
-      $("restMeterBar").style.width = "0%";
       return;
     }
 
@@ -3437,12 +3751,10 @@ textarea {
       const target = cleanNumber(state.session.restTargetSec, 0, true);
       const remaining = target > 0 ? Math.max(0, target - elapsedRest) : elapsedRest;
       $("mainTimer").textContent = formatClock(remaining);
-      $("restMeterBar").style.width = target > 0 ? `${Math.min(100, (elapsedRest / target) * 100)}%` : "100%";
       return;
     }
 
     $("mainTimer").textContent = "00:00";
-    $("restMeterBar").style.width = state.session.phase === "done" ? "100%" : "0%";
   }
 
   async function copyRecord() {
@@ -3590,26 +3902,36 @@ textarea {
 
     $("secondaryAction").addEventListener("click", () => {
       if (state.session.phase === "rest") beginNextSet();
-      else openPanel("queue");
+      else openQueuePickMode();
     });
 
-    $("focusQueue").addEventListener("click", () => {
-      openPanel("queue");
+    $("focusQueue")?.addEventListener("click", () => {
+      openQueuePickMode();
     });
 
+    $("undoAction").addEventListener("click", undoLastAction);
+    $("skipExercise").addEventListener("click", skipCurrentExercise);
     $("finishWorkout").addEventListener("click", finishWorkout);
-    $("finishWorkoutDock").addEventListener("click", finishWorkout);
-    $("dockPlan").addEventListener("click", () => openPanel("queue"));
-    $("dockRecord").addEventListener("click", () => {
+    $("finishWorkoutTop").addEventListener("click", finishWorkout);
+    $("dockPlan")?.addEventListener("click", openQueueEditMode);
+    $("dockRecord")?.addEventListener("click", () => {
       if (!state.lastRecord) return;
       renderRecord(state.lastRecord);
       openPanel("record");
     });
-    $("dockData").addEventListener("click", () => openPanel("data"));
-    $("dockHistory").addEventListener("click", () => openPanel("history"));
-    $("nextStrip").addEventListener("click", () => openPanel("queue"));
-    $("mobileScrim").addEventListener("click", () => closePanels({ hideSecondary: true }));
-    $("closeQueue").addEventListener("click", () => closePanel("queue"));
+    $("dockData")?.addEventListener("click", () => openPanel("data"));
+    $("dockHistory")?.addEventListener("click", () => openPanel("history"));
+    $("dataToggle").addEventListener("click", () => openPanel("data"));
+    $("nextStrip")?.addEventListener("click", openQueuePickMode);
+    $("mobileScrim").addEventListener("click", () => {
+      state.queuePickMode = false;
+      closePanels({ hideSecondary: true });
+    });
+    $("closeQueue")?.addEventListener("click", () => {
+      state.queuePickMode = false;
+      closePanel("queue");
+      renderQueue();
+    });
     $("closeData").addEventListener("click", () => closePanel("data", true));
     $("closeHistory").addEventListener("click", () => closePanel("history", true));
     $("addExercise").addEventListener("click", () => openExerciseEditor("add"));
@@ -3618,8 +3940,10 @@ textarea {
       if (!button) return;
       switchTemplate(button.dataset.templateId);
     });
-    $("overwritePlan").addEventListener("click", overwriteActiveTemplate);
-    $("saveAsPlan").addEventListener("click", saveAsNewTemplate);
+    $("confirmOverwritePlan").addEventListener("click", overwriteActiveTemplate);
+    $("confirmSaveAsPlan").addEventListener("click", saveAsNewTemplate);
+    $("dismissPlanSave").addEventListener("click", closePlanSavePrompt);
+    $("skipPlanSave").addEventListener("click", closePlanSavePrompt);
     $("cancelExercise").addEventListener("click", closeExerciseEditor);
     $("exerciseSheet").addEventListener("click", (event) => {
       if (event.target === $("exerciseSheet")) closeExerciseEditor();
@@ -3665,6 +3989,14 @@ textarea {
         }
         closeSwipedRows();
         openExerciseEditor("edit", id);
+      }
+      if (action === "pick") {
+        if (row.classList.contains("swiped")) {
+          closeSwipedRows();
+          return;
+        }
+        closeSwipedRows();
+        setActiveExercise(id);
       }
       if (action === "delete") {
         closeSwipedRows();

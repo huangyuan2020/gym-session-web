@@ -43,6 +43,8 @@
     reopenQueueAfterEdit: false,
     queuePointer: null,
     historyPointer: null,
+    undoSnapshot: null,
+    queuePickMode: false,
     suppressQueueClickUntil: 0,
     suppressHistoryClickUntil: 0,
   };
@@ -248,6 +250,22 @@
     saveJson(STORE.history, state.history.slice(0, 100));
   }
 
+  function pushUndo(label) {
+    if (!state.session || state.session.status === "finished") return;
+    state.undoSnapshot = {
+      label,
+      session: deepClone(state.session),
+    };
+  }
+
+  function undoLastAction() {
+    if (!state.undoSnapshot?.session) return;
+    state.session = deepClone(state.undoSnapshot.session);
+    state.undoSnapshot = null;
+    saveSession();
+    renderAll();
+  }
+
   function completedCount(exerciseId) {
     return state.session.sets.filter((set) => set.exerciseId === exerciseId).length;
   }
@@ -279,6 +297,23 @@
     const after = currentIndex >= 0 ? plan.slice(currentIndex + 1) : plan;
     const before = currentIndex >= 0 ? plan.slice(0, currentIndex + 1) : [];
     return [...after, ...before].find((exercise) => completedCount(exercise.id) < cleanNumber(exercise.sets, 0, true)) || null;
+  }
+
+  function nextTargetInfo() {
+    const current = getCurrentExercise();
+    const upcoming = findNextAfterCurrent();
+    if (!upcoming) return null;
+    const isSameExercise = current?.id === upcoming.id;
+    const completed = completedCount(upcoming.id);
+    const planned = cleanNumber(upcoming.sets, 0, true);
+    return {
+      exercise: upcoming,
+      isSameExercise,
+      completed,
+      planned,
+      setNumber: completed + 1,
+      label: isSameExercise && completed > 0 ? "下一组" : "下个动作",
+    };
   }
 
   function totalPlannedSets() {
@@ -350,6 +385,7 @@
       return;
     }
 
+    pushUndo("开始");
     hydrateDraft(false);
     const now = isoNow();
     if (!state.session.startedAt) state.session.startedAt = now;
@@ -367,6 +403,7 @@
     const exercise = getCurrentExercise();
     if (!exercise) return;
 
+    pushUndo("完成一组");
     hydrateDraft(false);
     const draft = state.session.currentDraft || {};
     const now = isoNow();
@@ -419,6 +456,7 @@
   }
 
   function beginNextSet() {
+    pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
     if (state.session.phase === "rest") finishRest();
 
     const next = findNextAfterCurrent();
@@ -436,10 +474,12 @@
     renderAll();
   }
 
-  function setActiveExercise(exerciseId) {
+  function setActiveExercise(exerciseId, options = {}) {
+    const { keepPanelOpen = false, undo = true } = options;
     const exists = state.session.plan.some((exercise) => exercise.id === exerciseId);
     if (!exists) return;
 
+    if (undo) pushUndo("换动作");
     if (state.session.phase === "rest") {
       finishRest();
       state.session.phase = "ready";
@@ -448,11 +488,39 @@
     }
 
     state.session.currentExerciseId = exerciseId;
+    const exercise = getCurrentExercise();
+    if (exercise && completedCount(exercise.id) >= cleanNumber(exercise.sets, 0, true)) {
+      exercise.sets = completedCount(exercise.id) + 1;
+    }
     hydrateDraft(true);
     saveSession();
-    closePanels();
+    state.queuePickMode = false;
+    if (!keepPanelOpen) closePanels();
     renderAll();
     $("currentName").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function skipCurrentExercise() {
+    const exercise = getCurrentExercise();
+    if (!exercise) return;
+    pushUndo("跳过动作");
+    if (state.session.phase === "rest") finishRest();
+    if (state.session.phase === "work") {
+      state.session.workStartedAt = null;
+    }
+    exercise.sets = completedCount(exercise.id);
+    const next = findNextAfterCurrent();
+    if (next) {
+      state.session.currentExerciseId = next.id;
+      state.session.phase = "ready";
+      hydrateDraft(true);
+    } else {
+      state.session.currentExerciseId = null;
+      state.session.currentDraft = null;
+      state.session.phase = "done";
+    }
+    saveSession();
+    renderAll();
   }
 
   function finishWorkout() {
@@ -561,6 +629,7 @@
     ensurePointer();
     saveSession();
     renderAll();
+    openPlanSavePrompt(`已删除 ${exercise.name}，要保存到训练计划吗？`);
   }
 
   function openExerciseEditor(mode, exerciseId = null) {
@@ -600,6 +669,7 @@
       restSec: cleanNumber($("exerciseRestInput").value, 60, true),
     };
 
+    const isAddingExercise = state.editor.mode !== "edit";
     if (state.editor.mode === "edit") {
       const target = state.session.plan.find((item) => item.id === state.editor.exerciseId);
       if (target) {
@@ -625,6 +695,7 @@
     state.reopenQueueAfterEdit = false;
     renderAll();
     if (shouldReopenQueue) openPanel("queue");
+    if (isAddingExercise) openPlanSavePrompt("已添加动作，要保存到训练计划吗？");
   }
 
   function updateCurrentDraft(field, rawValue) {
@@ -694,7 +765,7 @@
     saveSession();
     renderAll();
     openPanel("queue");
-    flashButton($("overwritePlan"), "已覆盖");
+    closePlanSavePrompt();
   }
 
   function saveAsNewTemplate() {
@@ -713,7 +784,22 @@
     saveSession();
     renderAll();
     openPanel("queue");
-    flashButton($("saveAsPlan"), "已另存");
+    closePlanSavePrompt();
+  }
+
+  function openPlanSavePrompt(message = "训练队列里的动作有增减，要保存到计划吗？") {
+    const sheet = $("planSaveSheet");
+    if (!sheet) return;
+    $("planSaveMessage").textContent = message;
+    sheet.classList.remove("hidden");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closePlanSavePrompt() {
+    const sheet = $("planSaveSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
   }
 
   function startNewSession() {
@@ -751,6 +837,7 @@
 
   function closePanels(options = {}) {
     const { hideSecondary = false } = options;
+    state.queuePickMode = false;
     ["queue", "record", "data", "history"].forEach((name) => {
       const panel = panelByName(name);
       if (!panel) return;
@@ -764,6 +851,7 @@
   function closePanel(name, hide = false) {
     const panel = panelByName(name);
     if (!panel) return;
+    if (name === "queue") state.queuePickMode = false;
     panel.classList.remove("sheet-open");
     if (hide) panel.classList.add("hidden");
     const stillOpen = ["queue", "record", "data", "history"].some((key) => panelByName(key)?.classList.contains("sheet-open"));
@@ -776,6 +864,7 @@
   function openPanel(name) {
     const panel = panelByName(name);
     if (!panel) return;
+    if (name !== "queue") state.queuePickMode = false;
 
     ["queue", "record", "data", "history"].forEach((key) => {
       if (key !== name) panelByName(key)?.classList.remove("sheet-open");
@@ -783,6 +872,13 @@
 
     if (name === "data") renderAnalytics();
     panel.classList.remove("hidden");
+
+    if (name === "queue") {
+      panel.classList.remove("sheet-open");
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+
     panel.classList.add("sheet-open");
 
     if (isMobileLayout()) {
@@ -792,6 +888,18 @@
     }
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openQueuePickMode() {
+    state.queuePickMode = true;
+    openPanel("queue");
+    renderQueue();
+  }
+
+  function openQueueEditMode() {
+    state.queuePickMode = false;
+    openPanel("queue");
+    renderQueue();
   }
 
   function renderAll() {
@@ -810,8 +918,6 @@
   }
 
   function renderHeader() {
-    const started = state.session.startedAt ? formatDateTime(state.session.startedAt) : formatDateTime(state.session.createdAt);
-    $("sessionDate").textContent = `${state.session.templateName || "全身力量"} · ${started}`;
   }
 
   function phaseText() {
@@ -832,13 +938,15 @@
     const exercise = getCurrentExercise();
     const primary = $("primaryAction");
     const secondary = $("secondaryAction");
+    const undoButton = $("undoAction");
+    const skipButton = $("skipExercise");
     const finish = $("finishWorkout");
-    const finishDock = $("finishWorkoutDock");
+    const finishTop = $("finishWorkoutTop");
     $("currentPanel").classList.toggle("no-exercise", !exercise);
 
     if (!exercise) {
       const finishDisabled = state.session.status === "finished" || state.session.sets.length === 0;
-      $("currentKicker").textContent = state.session.phase === "done" ? "全部完成" : "训练队列";
+      if ($("currentKicker")) $("currentKicker").textContent = state.session.phase === "done" ? "全部完成" : "训练队列";
       $("currentName").textContent = state.session.phase === "done" ? "可以完成训练" : "先添加动作";
       $("currentSetLine").textContent =
         state.session.status === "finished"
@@ -853,8 +961,10 @@
       primary.disabled = false;
       secondary.textContent = "训练队列";
       secondary.disabled = false;
+      undoButton.disabled = !state.undoSnapshot;
+      skipButton.disabled = true;
       finish.disabled = finishDisabled;
-      finishDock.disabled = finishDisabled;
+      finishTop.disabled = finishDisabled;
       return;
     }
 
@@ -865,17 +975,17 @@
     const lastSet = state.session.sets.find((set) => set.id === state.session.lastSetLogId);
 
     if (state.session.phase === "work") {
-      $("currentKicker").textContent = "当前组";
+      if ($("currentKicker")) $("currentKicker").textContent = "当前组";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "休息";
       secondary.textContent = "换动作";
     } else if (state.session.phase === "rest") {
-      $("currentKicker").textContent = "休息中";
+      if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       primary.textContent = "下一组";
       secondary.textContent = "跳过休息";
     } else {
-      $("currentKicker").textContent = "下一个动作";
+      if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "开始";
       secondary.textContent = "换动作";
@@ -888,13 +998,16 @@
     $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
     secondary.disabled = false;
+    undoButton.disabled = !state.undoSnapshot;
+    skipButton.disabled = state.session.status === "finished" || !exercise;
     finish.disabled = false;
-    finishDock.disabled = false;
+    finishTop.disabled = false;
   }
 
   function renderNextStrip() {
-    const exercise = getCurrentExercise();
     const nextStrip = $("nextStrip");
+    if (!nextStrip) return;
+    const exercise = getCurrentExercise();
     const label = $("nextStripLabel");
     const name = $("nextStripName");
 
@@ -905,24 +1018,22 @@
       return;
     }
 
-    const upcoming = findNextAfterCurrent();
-    if (!upcoming) {
+    const target = nextTargetInfo();
+    if (!target) {
       label.textContent = "接下来";
       name.textContent = "全部完成";
       nextStrip.disabled = false;
       return;
     }
 
-    const nextSet = completedCount(upcoming.id) + 1;
-    const planned = cleanNumber(upcoming.sets, 0, true);
-    label.textContent = state.session.phase === "rest" ? "休息后" : "当前";
-    name.textContent = `${upcoming.name} · 第 ${Math.min(nextSet, planned)}/${planned} 组`;
+    label.textContent = state.session.phase === "rest" ? `休息后 · ${target.label}` : target.label;
+    name.textContent = `${target.exercise.name} · 第 ${Math.min(target.setNumber, target.planned)}/${target.planned} 组`;
     nextStrip.disabled = false;
   }
 
   function renderDock() {
-    $("dockRecord").disabled = !state.lastRecord;
-    $("finishWorkoutDock").disabled = state.session.status === "finished" || state.session.sets.length === 0;
+    if ($("dockRecord")) $("dockRecord").disabled = !state.lastRecord;
+    $("finishWorkoutTop").disabled = state.session.status === "finished" || state.session.sets.length === 0;
   }
 
   function renderPlanTabs() {
@@ -937,12 +1048,13 @@
         `,
       )
       .join("");
-    $("overwritePlan").disabled = !state.session.plan.length;
-    $("saveAsPlan").disabled = !state.session.plan.length;
+    if ($("confirmOverwritePlan")) $("confirmOverwritePlan").disabled = !state.session.plan.length;
+    if ($("confirmSaveAsPlan")) $("confirmSaveAsPlan").disabled = !state.session.plan.length;
   }
 
   function renderQueue() {
     const list = $("exerciseList");
+    $("queueSection").classList.toggle("pick-mode", true);
     if (!state.session.plan.length) {
       list.innerHTML = '<div class="empty-state">没有动作</div>';
       return;
@@ -957,18 +1069,20 @@
         const reps = cleanNumber(exercise.reps, 0, true);
         const weight = cleanNumber(exercise.weight, 0);
         const rest = cleanNumber(exercise.restSec, 0, true);
+        const statusText = isActive ? "当前" : isDone ? "完成" : "待做";
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
             <div class="swipe-actions" aria-hidden="true">
               <button class="swipe-action delete" type="button" data-action="delete">删除</button>
             </div>
             <div class="exercise-card">
-              <button class="exercise-main" type="button" data-action="edit">
+              <button class="exercise-main" type="button" data-action="pick">
+                <span class="exercise-status">${statusText}</span>
                 <div class="exercise-title-line">
                   <div class="exercise-title">${escapeHtml(exercise.name)}</div>
                   <span class="exercise-badge">${completed}/${planned}</span>
                 </div>
-                <div class="exercise-meta">${planned}组 · ${reps}次 · ${weight}kg · ${rest}s</div>
+                <div class="exercise-meta">${reps}次 · ${weight}kg · 休${rest}s</div>
               </button>
             </div>
           </article>
@@ -1634,7 +1748,6 @@
 
     if (state.session.phase === "work") {
       $("mainTimer").textContent = formatClock(secondsBetween(state.session.workStartedAt, now));
-      $("restMeterBar").style.width = "0%";
       return;
     }
 
@@ -1643,12 +1756,10 @@
       const target = cleanNumber(state.session.restTargetSec, 0, true);
       const remaining = target > 0 ? Math.max(0, target - elapsedRest) : elapsedRest;
       $("mainTimer").textContent = formatClock(remaining);
-      $("restMeterBar").style.width = target > 0 ? `${Math.min(100, (elapsedRest / target) * 100)}%` : "100%";
       return;
     }
 
     $("mainTimer").textContent = "00:00";
-    $("restMeterBar").style.width = state.session.phase === "done" ? "100%" : "0%";
   }
 
   async function copyRecord() {
@@ -1796,26 +1907,36 @@
 
     $("secondaryAction").addEventListener("click", () => {
       if (state.session.phase === "rest") beginNextSet();
-      else openPanel("queue");
+      else openQueuePickMode();
     });
 
-    $("focusQueue").addEventListener("click", () => {
-      openPanel("queue");
+    $("focusQueue")?.addEventListener("click", () => {
+      openQueuePickMode();
     });
 
+    $("undoAction").addEventListener("click", undoLastAction);
+    $("skipExercise").addEventListener("click", skipCurrentExercise);
     $("finishWorkout").addEventListener("click", finishWorkout);
-    $("finishWorkoutDock").addEventListener("click", finishWorkout);
-    $("dockPlan").addEventListener("click", () => openPanel("queue"));
-    $("dockRecord").addEventListener("click", () => {
+    $("finishWorkoutTop").addEventListener("click", finishWorkout);
+    $("dockPlan")?.addEventListener("click", openQueueEditMode);
+    $("dockRecord")?.addEventListener("click", () => {
       if (!state.lastRecord) return;
       renderRecord(state.lastRecord);
       openPanel("record");
     });
-    $("dockData").addEventListener("click", () => openPanel("data"));
-    $("dockHistory").addEventListener("click", () => openPanel("history"));
-    $("nextStrip").addEventListener("click", () => openPanel("queue"));
-    $("mobileScrim").addEventListener("click", () => closePanels({ hideSecondary: true }));
-    $("closeQueue").addEventListener("click", () => closePanel("queue"));
+    $("dockData")?.addEventListener("click", () => openPanel("data"));
+    $("dockHistory")?.addEventListener("click", () => openPanel("history"));
+    $("dataToggle").addEventListener("click", () => openPanel("data"));
+    $("nextStrip")?.addEventListener("click", openQueuePickMode);
+    $("mobileScrim").addEventListener("click", () => {
+      state.queuePickMode = false;
+      closePanels({ hideSecondary: true });
+    });
+    $("closeQueue")?.addEventListener("click", () => {
+      state.queuePickMode = false;
+      closePanel("queue");
+      renderQueue();
+    });
     $("closeData").addEventListener("click", () => closePanel("data", true));
     $("closeHistory").addEventListener("click", () => closePanel("history", true));
     $("addExercise").addEventListener("click", () => openExerciseEditor("add"));
@@ -1824,8 +1945,10 @@
       if (!button) return;
       switchTemplate(button.dataset.templateId);
     });
-    $("overwritePlan").addEventListener("click", overwriteActiveTemplate);
-    $("saveAsPlan").addEventListener("click", saveAsNewTemplate);
+    $("confirmOverwritePlan").addEventListener("click", overwriteActiveTemplate);
+    $("confirmSaveAsPlan").addEventListener("click", saveAsNewTemplate);
+    $("dismissPlanSave").addEventListener("click", closePlanSavePrompt);
+    $("skipPlanSave").addEventListener("click", closePlanSavePrompt);
     $("cancelExercise").addEventListener("click", closeExerciseEditor);
     $("exerciseSheet").addEventListener("click", (event) => {
       if (event.target === $("exerciseSheet")) closeExerciseEditor();
@@ -1871,6 +1994,14 @@
         }
         closeSwipedRows();
         openExerciseEditor("edit", id);
+      }
+      if (action === "pick") {
+        if (row.classList.contains("swiped")) {
+          closeSwipedRows();
+          return;
+        }
+        closeSwipedRows();
+        setActiveExercise(id);
       }
       if (action === "delete") {
         closeSwipedRows();
