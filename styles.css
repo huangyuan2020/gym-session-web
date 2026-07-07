@@ -766,15 +766,6 @@ textarea:focus {
   transform: translateX(-72px);
 }
 
-.exercise-row.dragging {
-  z-index: 5;
-}
-
-.exercise-row.drag-armed,
-.exercise-row.dragging {
-  box-shadow: 0 14px 30px rgba(30, 35, 30, 0.18);
-}
-
 .row-wide-actions {
   display: none;
 }
@@ -822,12 +813,17 @@ textarea:focus {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+  user-select: none;
 }
 
 .plan-tab.active {
   border-color: rgba(31, 111, 74, 0.45);
   background: #eaf4ec;
   color: var(--primary);
+}
+
+.plan-tab:active {
+  transform: scale(0.98);
 }
 
 .plan-save-actions {

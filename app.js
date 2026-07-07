@@ -45,8 +45,10 @@
     historyPointer: null,
     undoSnapshot: null,
     queuePickMode: false,
+    planPress: null,
     suppressQueueClickUntil: 0,
     suppressHistoryClickUntil: 0,
+    suppressPlanClickUntil: 0,
   };
 
   function uid(prefix) {
@@ -602,16 +604,6 @@
     };
   }
 
-  function moveExerciseToIndex(exerciseId, nextIndex) {
-    const index = state.session.plan.findIndex((exercise) => exercise.id === exerciseId);
-    const boundedIndex = Math.max(0, Math.min(state.session.plan.length - 1, nextIndex));
-    if (index < 0 || boundedIndex < 0 || index === boundedIndex) return;
-    const [item] = state.session.plan.splice(index, 1);
-    state.session.plan.splice(boundedIndex, 0, item);
-    saveSession();
-    renderAll();
-  }
-
   function deleteExercise(exerciseId) {
     const exercise = state.session.plan.find((item) => item.id === exerciseId);
     if (!exercise) return;
@@ -747,6 +739,72 @@
     $("recordSection").classList.add("hidden");
     renderAll();
     openPanel("queue");
+  }
+
+  function deleteTemplate(templateId) {
+    const template = state.templates.find((item) => item.id === templateId);
+    if (!template) return;
+    if (state.templates.length <= 1) {
+      window.alert("至少保留一个训练计划。");
+      return;
+    }
+    if (!window.confirm(`删除训练计划「${template.name}」？`)) return;
+
+    const deletingActive = templateId === state.activeTemplateId;
+    if (deletingActive && hasActiveWork() && !window.confirm("删除当前计划会清掉当前未完成训练，是否继续？")) return;
+
+    state.templates = state.templates.filter((item) => item.id !== templateId);
+    if (deletingActive) {
+      setActiveTemplate(state.templates[0]?.id);
+      state.session = createSessionFromTemplate(state.template);
+      state.lastRecord = null;
+      $("recordSection").classList.add("hidden");
+      saveSession();
+    } else {
+      setActiveTemplate(state.activeTemplateId);
+    }
+
+    saveTemplates();
+    renderAll();
+    openPanel("queue");
+  }
+
+  function beginPlanPress(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const button = event.target.closest("button[data-template-id]");
+    if (!button) return;
+    const templateId = button.dataset.templateId;
+    window.clearTimeout(state.planPress?.timer);
+    state.planPress = {
+      pointerId: event.pointerId,
+      templateId,
+      startX: event.clientX,
+      startY: event.clientY,
+      triggered: false,
+      timer: window.setTimeout(() => {
+        if (!state.planPress || state.planPress.pointerId !== event.pointerId) return;
+        state.planPress.triggered = true;
+        state.suppressPlanClickUntil = Date.now() + 700;
+        deleteTemplate(templateId);
+      }, 560),
+    };
+  }
+
+  function movePlanPress(event) {
+    const press = state.planPress;
+    if (!press || press.pointerId !== event.pointerId) return;
+    const distance = Math.hypot(event.clientX - press.startX, event.clientY - press.startY);
+    if (distance > 12) cancelPlanPress();
+  }
+
+  function finishPlanPress(event) {
+    if (!state.planPress || state.planPress.pointerId !== event.pointerId) return;
+    cancelPlanPress();
+  }
+
+  function cancelPlanPress() {
+    if (state.planPress?.timer) window.clearTimeout(state.planPress.timer);
+    state.planPress = null;
   }
 
   function overwriteActiveTemplate() {
@@ -1061,7 +1119,14 @@
     }
 
     list.innerHTML = state.session.plan
-      .map((exercise, index) => {
+      .map((exercise, index) => ({ exercise, index }))
+      .sort((a, b) => {
+        const aDone = completedCount(a.exercise.id) >= cleanNumber(a.exercise.sets, 0, true);
+        const bDone = completedCount(b.exercise.id) >= cleanNumber(b.exercise.sets, 0, true);
+        if (aDone !== bDone) return aDone ? 1 : -1;
+        return a.index - b.index;
+      })
+      .map(({ exercise }) => {
         const completed = completedCount(exercise.id);
         const planned = cleanNumber(exercise.sets, 0, true);
         const isActive = state.session.currentExerciseId === exercise.id;
@@ -1069,7 +1134,7 @@
         const reps = cleanNumber(exercise.reps, 0, true);
         const weight = cleanNumber(exercise.weight, 0);
         const rest = cleanNumber(exercise.restSec, 0, true);
-        const statusText = isActive ? "当前" : isDone ? "完成" : "待做";
+        const statusText = isDone ? "完成" : isActive ? "当前" : "待做";
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
             <div class="swipe-actions" aria-hidden="true">
@@ -1100,15 +1165,6 @@
     });
   }
 
-  function queueDropIndexFromY(activeRow, clientY) {
-    const rows = Array.from($("exerciseList").querySelectorAll(".exercise-row")).filter((row) => row !== activeRow);
-    const targetIndex = rows.findIndex((row) => {
-      const rect = row.getBoundingClientRect();
-      return clientY < rect.top + rect.height / 2;
-    });
-    return targetIndex === -1 ? rows.length : targetIndex;
-  }
-
   function beginQueueGesture(event, pointerId, clientX, clientY, pointerType = "touch", button = 0) {
     if (state.queuePointer) return;
     if (pointerType === "mouse" && button !== 0) return;
@@ -1123,23 +1179,10 @@
       startX: clientX,
       startY: clientY,
       mode: null,
-      longReady: false,
-      longPressTimer: null,
       opened: row.classList.contains("swiped"),
     };
-    pointer.longPressTimer = window.setTimeout(() => {
-      if (state.queuePointer !== pointer || pointer.mode) return;
-      pointer.longReady = true;
-      row.classList.add("drag-armed");
-    }, 360);
     state.queuePointer = pointer;
     if (Number.isFinite(pointerId)) row.setPointerCapture?.(pointerId);
-  }
-
-  function clearQueueLongPress(pointer) {
-    if (!pointer?.longPressTimer) return;
-    window.clearTimeout(pointer.longPressTimer);
-    pointer.longPressTimer = null;
   }
 
   function beginQueuePointer(event) {
@@ -1161,20 +1204,12 @@
       if (Math.max(absX, absY) < 8) return;
       if (absX > absY * 1.15) {
         pointer.mode = "swipe";
-      } else if (pointer.longReady) {
-        pointer.mode = "drag";
       } else {
         return;
       }
-      clearQueueLongPress(pointer);
-      closeSwipedRows(pointer.mode === "swipe" ? pointer.row : null);
-      pointer.row.classList.remove("drag-armed");
-      pointer.row.classList.add(pointer.mode === "swipe" ? "swiping" : "dragging");
-      if (pointer.mode === "swipe") {
-        card.style.transition = "none";
-      } else {
-        pointer.row.style.transition = "none";
-      }
+      closeSwipedRows(pointer.row);
+      pointer.row.classList.add("swiping");
+      card.style.transition = "none";
     }
 
     if (pointer.mode === "swipe") {
@@ -1185,8 +1220,6 @@
       return;
     }
 
-    event.preventDefault();
-    pointer.row.style.transform = `translateY(${dy}px)`;
   }
 
   function moveQueuePointer(event) {
@@ -1198,11 +1231,9 @@
     if (!pointer || pointer.pointerId !== pointerId) return;
     const card = pointer.row.querySelector(".exercise-card");
     const dx = clientX - pointer.startX;
-    const dy = clientY - pointer.startY;
 
     if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
-    clearQueueLongPress(pointer);
-    pointer.row.classList.remove("swiping", "dragging", "drag-armed");
+    pointer.row.classList.remove("swiping");
     if (card) {
       card.style.transition = "";
       card.style.transform = "";
@@ -1213,12 +1244,6 @@
     if (pointer.mode === "swipe") {
       const shouldOpen = pointer.opened ? dx < 28 : dx < -42;
       pointer.row.classList.toggle("swiped", shouldOpen);
-      state.suppressQueueClickUntil = Date.now() + 350;
-    } else if (pointer.mode === "drag") {
-      const nextIndex = queueDropIndexFromY(pointer.row, clientY);
-      if (Math.abs(dy) > 18) moveExerciseToIndex(pointer.id, nextIndex);
-      state.suppressQueueClickUntil = Date.now() + 350;
-    } else if (pointer.longReady) {
       state.suppressQueueClickUntil = Date.now() + 350;
     }
 
@@ -1234,8 +1259,7 @@
     if (!pointer || pointer.pointerId !== pointerId) return;
     const card = pointer.row.querySelector(".exercise-card");
     if (Number.isFinite(pointerId)) pointer.row.releasePointerCapture?.(pointerId);
-    clearQueueLongPress(pointer);
-    pointer.row.classList.remove("swiping", "dragging", "drag-armed");
+    pointer.row.classList.remove("swiping");
     if (card) {
       card.style.transition = "";
       card.style.transform = "";
@@ -1940,9 +1964,17 @@
     $("closeData").addEventListener("click", () => closePanel("data", true));
     $("closeHistory").addEventListener("click", () => closePanel("history", true));
     $("addExercise").addEventListener("click", () => openExerciseEditor("add"));
+    $("planTabs").addEventListener("pointerdown", beginPlanPress);
+    $("planTabs").addEventListener("pointermove", movePlanPress);
+    $("planTabs").addEventListener("pointerup", finishPlanPress);
+    $("planTabs").addEventListener("pointercancel", cancelPlanPress);
     $("planTabs").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-template-id]");
       if (!button) return;
+      if (Date.now() < state.suppressPlanClickUntil) {
+        event.preventDefault();
+        return;
+      }
       switchTemplate(button.dataset.templateId);
     });
     $("confirmOverwritePlan").addEventListener("click", overwriteActiveTemplate);
