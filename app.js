@@ -46,6 +46,7 @@
     undoSnapshot: null,
     queuePickMode: false,
     planPress: null,
+    queueTap: null,
     suppressQueueClickUntil: 0,
     suppressHistoryClickUntil: 0,
     suppressPlanClickUntil: 0,
@@ -995,9 +996,7 @@
   function renderCurrent() {
     const exercise = getCurrentExercise();
     const primary = $("primaryAction");
-    const secondary = $("secondaryAction");
     const undoButton = $("undoAction");
-    const skipButton = $("skipExercise");
     const finish = $("finishWorkout");
     const finishTop = $("finishWorkoutTop");
     $("currentPanel").classList.toggle("no-exercise", !exercise);
@@ -1017,10 +1016,7 @@
       $("currentRest").value = "";
       primary.textContent = state.session.status === "finished" ? "新训练" : state.session.phase === "done" ? "完成训练" : "添加动作";
       primary.disabled = false;
-      secondary.textContent = "训练队列";
-      secondary.disabled = false;
       undoButton.disabled = !state.undoSnapshot;
-      skipButton.disabled = true;
       finish.disabled = finishDisabled;
       finishTop.disabled = finishDisabled;
       return;
@@ -1036,17 +1032,14 @@
       if ($("currentKicker")) $("currentKicker").textContent = "当前组";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "休息";
-      secondary.textContent = "换动作";
     } else if (state.session.phase === "rest") {
       if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       primary.textContent = "下一组";
-      secondary.textContent = "跳过休息";
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "开始";
-      secondary.textContent = "换动作";
     }
 
     $("currentName").textContent = exercise.name;
@@ -1055,9 +1048,7 @@
     $("currentRest").value = draft?.restSec ?? exercise.restSec;
     $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
-    secondary.disabled = false;
     undoButton.disabled = !state.undoSnapshot;
-    skipButton.disabled = state.session.status === "finished" || !exercise;
     finish.disabled = false;
     finishTop.disabled = false;
   }
@@ -1163,6 +1154,34 @@
       const card = row.querySelector(".exercise-card");
       if (card) card.style.transform = "";
     });
+  }
+
+  function clearQueueTap() {
+    if (state.queueTap?.timer) window.clearTimeout(state.queueTap.timer);
+    state.queueTap = null;
+  }
+
+  function handleQueuePick(row, exerciseId) {
+    if (row.classList.contains("swiped")) {
+      closeSwipedRows();
+      return;
+    }
+    closeSwipedRows();
+
+    if (state.queueTap?.id === exerciseId) {
+      clearQueueTap();
+      openExerciseEditor("edit", exerciseId);
+      return;
+    }
+
+    clearQueueTap();
+    state.queueTap = {
+      id: exerciseId,
+      timer: window.setTimeout(() => {
+        state.queueTap = null;
+        setActiveExercise(exerciseId);
+      }, 260),
+    };
   }
 
   function beginQueueGesture(event, pointerId, clientX, clientY, pointerType = "touch", button = 0) {
@@ -1929,17 +1948,11 @@
       else startSet();
     });
 
-    $("secondaryAction").addEventListener("click", () => {
-      if (state.session.phase === "rest") beginNextSet();
-      else openQueuePickMode();
-    });
-
     $("focusQueue")?.addEventListener("click", () => {
       openQueuePickMode();
     });
 
     $("undoAction").addEventListener("click", undoLastAction);
-    $("skipExercise").addEventListener("click", skipCurrentExercise);
     $("finishWorkout").addEventListener("click", finishWorkout);
     $("finishWorkoutTop").addEventListener("click", finishWorkout);
     $("dockPlan")?.addEventListener("click", openQueueEditMode);
@@ -2020,6 +2033,7 @@
       if (!id) return;
 
       if (action === "edit") {
+        clearQueueTap();
         if (row.classList.contains("swiped")) {
           closeSwipedRows();
           return;
@@ -2028,14 +2042,10 @@
         openExerciseEditor("edit", id);
       }
       if (action === "pick") {
-        if (row.classList.contains("swiped")) {
-          closeSwipedRows();
-          return;
-        }
-        closeSwipedRows();
-        setActiveExercise(id);
+        handleQueuePick(row, id);
       }
       if (action === "delete") {
+        clearQueueTap();
         closeSwipedRows();
         deleteExercise(id);
       }

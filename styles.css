@@ -270,7 +270,7 @@ h2 {
 }
 
 .current-panel.no-exercise .action-row {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .current-panel.no-exercise .compact-action {
@@ -386,7 +386,7 @@ textarea:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(82px, 0.9fr) 42px 42px;
+  grid-template-columns: minmax(0, 1fr) 42px;
   align-items: stretch;
   gap: 8px;
   margin-top: 14px;
@@ -1551,7 +1551,7 @@ textarea {
   }
 
   .action-row {
-    grid-template-columns: minmax(0, 1.3fr) minmax(76px, 0.85fr) 38px 38px;
+    grid-template-columns: minmax(0, 1fr) 38px;
     gap: 8px;
     margin-top: 8px;
   }

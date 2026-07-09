@@ -283,7 +283,7 @@ h2 {
 }
 
 .current-panel.no-exercise .action-row {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .current-panel.no-exercise .compact-action {
@@ -399,7 +399,7 @@ textarea:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(82px, 0.9fr) 42px 42px;
+  grid-template-columns: minmax(0, 1fr) 42px;
   align-items: stretch;
   gap: 8px;
   margin-top: 14px;
@@ -1564,7 +1564,7 @@ textarea {
   }
 
   .action-row {
-    grid-template-columns: minmax(0, 1.3fr) minmax(76px, 0.85fr) 38px 38px;
+    grid-template-columns: minmax(0, 1fr) 38px;
     gap: 8px;
     margin-top: 8px;
   }
@@ -1815,17 +1815,10 @@ textarea {
 
           <div class="action-row">
             <button class="primary-action" id="primaryAction" type="button">开始</button>
-            <button class="secondary-action" id="secondaryAction" type="button">跳过休息</button>
             <button class="icon-button compact-action" id="undoAction" type="button" title="撤销" aria-label="撤销">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 14 4 9l5-5" />
                 <path d="M4 9h10a6 6 0 0 1 0 12h-2" />
-              </svg>
-            </button>
-            <button class="icon-button compact-action" id="skipExercise" type="button" title="跳过当前动作" aria-label="跳过当前动作">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m5 4 8 8-8 8V4Z" />
-                <path d="M19 5v14" />
               </svg>
             </button>
           </div>
@@ -2033,6 +2026,7 @@ textarea {
     undoSnapshot: null,
     queuePickMode: false,
     planPress: null,
+    queueTap: null,
     suppressQueueClickUntil: 0,
     suppressHistoryClickUntil: 0,
     suppressPlanClickUntil: 0,
@@ -2982,9 +2976,7 @@ textarea {
   function renderCurrent() {
     const exercise = getCurrentExercise();
     const primary = $("primaryAction");
-    const secondary = $("secondaryAction");
     const undoButton = $("undoAction");
-    const skipButton = $("skipExercise");
     const finish = $("finishWorkout");
     const finishTop = $("finishWorkoutTop");
     $("currentPanel").classList.toggle("no-exercise", !exercise);
@@ -3004,10 +2996,7 @@ textarea {
       $("currentRest").value = "";
       primary.textContent = state.session.status === "finished" ? "新训练" : state.session.phase === "done" ? "完成训练" : "添加动作";
       primary.disabled = false;
-      secondary.textContent = "训练队列";
-      secondary.disabled = false;
       undoButton.disabled = !state.undoSnapshot;
-      skipButton.disabled = true;
       finish.disabled = finishDisabled;
       finishTop.disabled = finishDisabled;
       return;
@@ -3023,17 +3012,14 @@ textarea {
       if ($("currentKicker")) $("currentKicker").textContent = "当前组";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "休息";
-      secondary.textContent = "换动作";
     } else if (state.session.phase === "rest") {
       if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       primary.textContent = "下一组";
-      secondary.textContent = "跳过休息";
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
       primary.textContent = "开始";
-      secondary.textContent = "换动作";
     }
 
     $("currentName").textContent = exercise.name;
@@ -3042,9 +3028,7 @@ textarea {
     $("currentRest").value = draft?.restSec ?? exercise.restSec;
     $("currentWeight").step = String(currentStepFor("weight", exercise));
     primary.disabled = false;
-    secondary.disabled = false;
     undoButton.disabled = !state.undoSnapshot;
-    skipButton.disabled = state.session.status === "finished" || !exercise;
     finish.disabled = false;
     finishTop.disabled = false;
   }
@@ -3150,6 +3134,34 @@ textarea {
       const card = row.querySelector(".exercise-card");
       if (card) card.style.transform = "";
     });
+  }
+
+  function clearQueueTap() {
+    if (state.queueTap?.timer) window.clearTimeout(state.queueTap.timer);
+    state.queueTap = null;
+  }
+
+  function handleQueuePick(row, exerciseId) {
+    if (row.classList.contains("swiped")) {
+      closeSwipedRows();
+      return;
+    }
+    closeSwipedRows();
+
+    if (state.queueTap?.id === exerciseId) {
+      clearQueueTap();
+      openExerciseEditor("edit", exerciseId);
+      return;
+    }
+
+    clearQueueTap();
+    state.queueTap = {
+      id: exerciseId,
+      timer: window.setTimeout(() => {
+        state.queueTap = null;
+        setActiveExercise(exerciseId);
+      }, 260),
+    };
   }
 
   function beginQueueGesture(event, pointerId, clientX, clientY, pointerType = "touch", button = 0) {
@@ -3916,17 +3928,11 @@ textarea {
       else startSet();
     });
 
-    $("secondaryAction").addEventListener("click", () => {
-      if (state.session.phase === "rest") beginNextSet();
-      else openQueuePickMode();
-    });
-
     $("focusQueue")?.addEventListener("click", () => {
       openQueuePickMode();
     });
 
     $("undoAction").addEventListener("click", undoLastAction);
-    $("skipExercise").addEventListener("click", skipCurrentExercise);
     $("finishWorkout").addEventListener("click", finishWorkout);
     $("finishWorkoutTop").addEventListener("click", finishWorkout);
     $("dockPlan")?.addEventListener("click", openQueueEditMode);
@@ -4007,6 +4013,7 @@ textarea {
       if (!id) return;
 
       if (action === "edit") {
+        clearQueueTap();
         if (row.classList.contains("swiped")) {
           closeSwipedRows();
           return;
@@ -4015,14 +4022,10 @@ textarea {
         openExerciseEditor("edit", id);
       }
       if (action === "pick") {
-        if (row.classList.contains("swiped")) {
-          closeSwipedRows();
-          return;
-        }
-        closeSwipedRows();
-        setActiveExercise(id);
+        handleQueuePick(row, id);
       }
       if (action === "delete") {
+        clearQueueTap();
         closeSwipedRows();
         deleteExercise(id);
       }
