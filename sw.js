@@ -1,4 +1,4 @@
-const CACHE_NAME = "gym-session-web-v37";
+const CACHE_NAME = "gym-session-web-v40";
 const ASSETS = [
   "./",
   "./index.html",

@@ -3,27 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#1f6f4a" />
+    <meta name="theme-color" content="#00a86b" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="力量记录" />
     <title>力量记录</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%231f6f4a%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23e2a32c%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%231f6f4a%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23e2a32c%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%2300a86b%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23ff633f%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%2300a86b%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23ff633f%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" />
     <style>
 :root {
   color-scheme: light;
-  --bg: #f4f7f1;
+  --bg: #f3f6f4;
   --surface: #ffffff;
-  --surface-strong: #fdfcf8;
-  --ink: #17211b;
-  --muted: #667067;
-  --line: #d9e0d6;
-  --primary: #1f6f4a;
-  --primary-pressed: #185a3c;
-  --accent: #e4572e;
-  --blue: #285fbd;
-  --gold: #e2a32c;
+  --surface-strong: #f7faf8;
+  --ink: #142019;
+  --muted: #5e6b64;
+  --line: #d7e0db;
+  --primary: #00a86b;
+  --primary-pressed: #008a58;
+  --accent: #ff633f;
+  --blue: #316bff;
+  --gold: #ffc247;
   --shadow: 0 10px 28px rgba(28, 42, 31, 0.1);
   --radius: 8px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -41,9 +41,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(31, 111, 74, 0.08), rgba(244, 247, 241, 0) 260px),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -94,7 +92,7 @@ svg {
   gap: 12px;
   margin: -12px -14px 12px;
   padding: calc(env(safe-area-inset-top) + 12px) 14px 10px;
-  background: rgba(244, 247, 241, 0.92);
+  background: rgba(243, 246, 244, 0.94);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(217, 224, 214, 0.7);
 }
@@ -106,6 +104,27 @@ svg {
   flex: 0 0 auto;
 }
 
+.topbar-elapsed {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 58px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.topbar-elapsed span {
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.topbar-elapsed strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
 .topbar-actions .icon-button {
   width: 38px;
   min-height: 38px;
@@ -115,8 +134,8 @@ svg {
   min-height: 38px;
   border-radius: var(--radius);
   padding: 0 12px;
-  border: 1px solid rgba(31, 111, 74, 0.42);
-  border-color: rgba(31, 111, 74, 0.42);
+  border: 1px solid rgba(0, 168, 107, 0.42);
+  border-color: rgba(0, 168, 107, 0.42);
   background: var(--primary);
   color: #fff;
   font-size: 13px;
@@ -134,7 +153,7 @@ svg {
   width: 38px;
   height: 38px;
   border-radius: var(--radius);
-  box-shadow: 0 4px 14px rgba(31, 111, 74, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 168, 107, 0.22);
   flex: 0 0 auto;
 }
 
@@ -152,40 +171,6 @@ svg {
   gap: 10px;
 }
 
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--line);
-}
-
-.summary-strip > div {
-  min-width: 0;
-  padding: 9px 8px;
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.metric-label {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.summary-strip strong {
-  display: block;
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .current-panel,
 .queue-section,
 .finish-section,
@@ -195,11 +180,38 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 .current-panel {
   padding: 16px;
+}
+
+body[data-phase="work"] .current-panel {
+  border-color: rgba(0, 168, 107, 0.4);
+}
+
+body[data-phase="work"] .topbar-elapsed strong,
+body[data-phase="work"] #mainTimer {
+  color: var(--primary);
+}
+
+body[data-phase="rest"] .current-panel {
+  border-color: rgba(255, 99, 63, 0.48);
+}
+
+body[data-phase="rest"] .topbar-elapsed strong,
+body[data-phase="rest"] #mainTimer {
+  color: var(--accent);
+}
+
+body[data-phase="rest"] #primaryAction {
+  background: var(--accent);
+  box-shadow: 0 8px 18px rgba(255, 99, 63, 0.22);
+}
+
+body[data-phase="rest"] #primaryAction:active {
+  background: #e64f2f;
 }
 
 .panel-kicker,
@@ -297,9 +309,7 @@ h2 {
   min-height: 88px;
   border: 1px solid #cfd9cf;
   border-radius: var(--radius);
-  background:
-    linear-gradient(135deg, rgba(31, 111, 74, 0.1), rgba(226, 163, 44, 0.13)),
-    var(--surface-strong);
+  background: var(--surface-strong);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   font-size: 52px;
@@ -358,7 +368,7 @@ input {
 
 .stepper:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(31, 111, 74, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.16);
 }
 
 .stepper input {
@@ -394,7 +404,7 @@ input {
 input:focus,
 textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(31, 111, 74, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.16);
 }
 
 .action-row {
@@ -470,7 +480,7 @@ textarea:focus {
 .finish-button {
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(31, 111, 74, 0.18);
+  box-shadow: 0 8px 18px rgba(0, 168, 107, 0.2);
 }
 
 .primary-action:active,
@@ -643,7 +653,7 @@ textarea:focus {
 }
 
 .exercise-row.active {
-  border-color: rgba(31, 111, 74, 0.45);
+  border-color: rgba(0, 168, 107, 0.45);
   background: #e6efe8;
   box-shadow: inset 3px 0 0 var(--primary);
 }
@@ -830,7 +840,7 @@ textarea:focus {
 }
 
 .plan-tab.active {
-  border-color: rgba(31, 111, 74, 0.45);
+  border-color: rgba(0, 168, 107, 0.45);
   background: #eaf4ec;
   color: var(--primary);
 }
@@ -852,11 +862,11 @@ textarea:focus {
 }
 
 .queue-section.pick-mode {
-  border-color: rgba(226, 163, 44, 0.55);
+  border-color: var(--line);
 }
 
 .queue-section.pick-mode .exercise-card {
-  background: #fffaf0;
+  background: #fbfcfa;
 }
 
 .queue-section.pick-mode .exercise-row.active .exercise-card {
@@ -877,7 +887,7 @@ textarea:focus {
 }
 
 .record-section {
-  border-color: rgba(31, 111, 74, 0.38);
+  border-color: rgba(0, 168, 107, 0.38);
 }
 
 .data-section {
@@ -1363,6 +1373,18 @@ textarea {
   margin-top: 14px;
 }
 
+.finish-confirm-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.finish-confirm-actions .secondary-action,
+.finish-confirm-actions .primary-action {
+  min-height: 46px;
+}
+
 .plan-save-dialog-actions .plain-button {
   min-height: 40px;
 }
@@ -1413,8 +1435,24 @@ textarea {
 }
 
 @media (max-width: 380px) {
-  .summary-strip strong {
-    font-size: 12px;
+  .topbar {
+    gap: 6px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+
+  .brand-title {
+    display: none;
+  }
+
+  .topbar-elapsed {
+    min-width: 48px;
+  }
+
+  .topbar-actions .finish-top-button {
+    padding-inline: 8px;
   }
 
   h1 {
@@ -1453,18 +1491,43 @@ textarea {
 }
 
 @media (max-width: 679px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body.panel-active {
     overflow: hidden;
   }
 
   .app-shell {
     width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 18px);
   }
 
   .topbar {
+    position: static;
+    flex: 0 0 auto;
     margin: -8px -10px 8px;
     padding: calc(env(safe-area-inset-top) + 8px) 10px 8px;
+  }
+
+  .main-stack {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .current-panel {
+    flex: 0 0 auto;
   }
 
   .brand-mark {
@@ -1474,18 +1537,6 @@ textarea {
 
   .brand-title {
     font-size: 16px;
-  }
-
-  .summary-strip > div {
-    padding: 7px 7px;
-  }
-
-  .metric-label {
-    font-size: 10px;
-  }
-
-  .summary-strip strong {
-    font-size: 13px;
   }
 
   .current-panel {
@@ -1636,8 +1687,12 @@ textarea {
   .queue-section {
     position: static;
     z-index: auto;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
     max-height: none;
-    overflow: auto;
+    overflow: hidden;
     padding: 10px;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -1673,9 +1728,14 @@ textarea {
   }
 
   .exercise-list {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: none;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding-right: 1px;
+    padding-bottom: 2px;
   }
 
   .exercise-row {
@@ -1731,10 +1791,14 @@ textarea {
     <div class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%231f6f4a%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23e2a32c%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" alt="" class="brand-mark" />
+          <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22%E5%8A%9B%E9%87%8F%E8%AE%B0%E5%BD%95%22%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22%2300a86b%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M25%2075h10V53H25v22Zm68%200h10V53H93v22ZM41%2083h12V45H41v38Zm34%200h12V45H75v38ZM56%2069h16V59H56v10Z%22%20fill%3D%22%23fdfcf8%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2092h80%22%20stroke%3D%22%23ff633f%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%3C%2Fsvg%3E%0A" alt="" class="brand-mark" />
           <div>
             <div class="brand-title">力量记录</div>
           </div>
+        </div>
+        <div class="topbar-elapsed" aria-label="训练用时">
+          <span>用时</span>
+          <strong id="sessionElapsed">00:00</strong>
         </div>
         <div class="topbar-actions">
           <button class="icon-button" id="dataToggle" type="button" title="训练数据" aria-label="训练数据">
@@ -1757,25 +1821,6 @@ textarea {
       </header>
 
       <main class="main-stack">
-        <section class="summary-strip" aria-label="训练概览">
-          <div>
-            <span class="metric-label">组数</span>
-            <strong id="progressSets">0/0</strong>
-          </div>
-          <div>
-            <span class="metric-label">容量</span>
-            <strong id="progressVolume">0kg</strong>
-          </div>
-          <div>
-            <span class="metric-label">用时</span>
-            <strong id="sessionElapsed">00:00</strong>
-          </div>
-          <div>
-            <span class="metric-label">状态</span>
-            <strong id="phaseLabel">准备</strong>
-          </div>
-        </section>
-
         <section class="current-panel" id="currentPanel" aria-label="当前训练">
           <div class="current-title-row">
             <h1 id="currentName">加载中</h1>
@@ -1973,6 +2018,26 @@ textarea {
           <button class="primary-action compact" id="confirmOverwritePlan" type="button">覆盖本计划</button>
           <button class="secondary-action" id="confirmSaveAsPlan" type="button">另存为新计划</button>
           <button class="plain-button" id="skipPlanSave" type="button">暂不保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-backdrop hidden" id="finishConfirmSheet" aria-hidden="true">
+      <div class="sheet finish-confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="finishConfirmTitle">
+        <div class="sheet-grip"></div>
+        <div class="section-heading">
+          <h2 id="finishConfirmTitle">完成训练？</h2>
+          <button class="icon-button" id="dismissFinishConfirm" type="button" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="sheet-copy" id="finishConfirmMessage"></p>
+        <div class="finish-confirm-actions">
+          <button class="secondary-action" id="cancelFinishWorkout" type="button">继续训练</button>
+          <button class="primary-action compact" id="confirmFinishWorkout" type="button">完成并保存</button>
         </div>
       </div>
     </div>
@@ -2299,13 +2364,6 @@ textarea {
     };
   }
 
-  function totalPlannedSets() {
-    return state.session.plan.reduce((sum, exercise) => {
-      const planned = cleanNumber(exercise.sets, 0, true);
-      return sum + Math.max(planned, completedCount(exercise.id));
-    }, 0);
-  }
-
   function totalVolume(sets = state.session.sets) {
     return sets.reduce((sum, set) => sum + cleanNumber(set.actualReps, 0, true) * cleanNumber(set.actualWeight, 0), 0);
   }
@@ -2526,6 +2584,38 @@ textarea {
     renderAll();
     renderRecord(record);
     openPanel("record");
+  }
+
+  function remainingPlannedSets() {
+    return state.session.plan.reduce((sum, exercise) => {
+      const planned = cleanNumber(exercise.sets, 0, true);
+      return sum + Math.max(0, planned - completedCount(exercise.id));
+    }, 0);
+  }
+
+  function closeFinishConfirm() {
+    const sheet = $("finishConfirmSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+
+  function requestFinishWorkout() {
+    const remaining = remainingPlannedSets();
+    const isWorking = state.session.phase === "work";
+    if (!remaining && !isWorking) {
+      finishWorkout();
+      return;
+    }
+
+    const afterCurrent = Math.max(0, remaining - (isWorking ? 1 : 0));
+    $("finishConfirmMessage").textContent = isWorking
+      ? afterCurrent
+        ? `当前组会按页面参数保存，之后仍有 ${afterCurrent} 组计划未完成。确定结束本次训练吗？`
+        : "当前组会按页面参数保存并结束本次训练。"
+      : `还有 ${remaining} 组计划未完成，确定结束并生成训练记录吗？`;
+    $("finishConfirmSheet").classList.remove("hidden");
+    $("finishConfirmSheet").setAttribute("aria-hidden", "false");
   }
 
   function buildRecord(session) {
@@ -2943,8 +3033,8 @@ textarea {
 
   function renderAll() {
     ensurePointer();
+    document.body.dataset.phase = state.session.phase;
     renderHeader();
-    renderSummary();
     renderCurrent();
     renderNextStrip();
     renderPlanTabs();
@@ -2957,20 +3047,6 @@ textarea {
   }
 
   function renderHeader() {
-  }
-
-  function phaseText() {
-    const phase = state.session.phase;
-    if (phase === "work") return "训练";
-    if (phase === "rest") return "休息";
-    if (phase === "done") return "完成";
-    return "准备";
-  }
-
-  function renderSummary() {
-    $("progressSets").textContent = `${state.session.sets.length}/${totalPlannedSets()}`;
-    $("progressVolume").textContent = `${Math.round(totalVolume() * 10) / 10}kg`;
-    $("phaseLabel").textContent = phaseText();
   }
 
   function renderCurrent() {
@@ -3015,7 +3091,12 @@ textarea {
     } else if (state.session.phase === "rest") {
       if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
-      primary.textContent = "下一组";
+      const target = nextTargetInfo();
+      primary.textContent = !target
+        ? "完成训练"
+        : target.isSameExercise
+          ? "下一组"
+          : `下个动作 · ${target.exercise.name}`;
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
@@ -3923,8 +4004,11 @@ textarea {
         return;
       }
       if (state.session.phase === "work") completeSetToRest();
-      else if (state.session.phase === "rest") beginNextSet();
-      else if (state.session.phase === "done") finishWorkout();
+      else if (state.session.phase === "rest") {
+        if (nextTargetInfo()) beginNextSet();
+        else requestFinishWorkout();
+      }
+      else if (state.session.phase === "done") requestFinishWorkout();
       else startSet();
     });
 
@@ -3933,8 +4017,17 @@ textarea {
     });
 
     $("undoAction").addEventListener("click", undoLastAction);
-    $("finishWorkout").addEventListener("click", finishWorkout);
-    $("finishWorkoutTop").addEventListener("click", finishWorkout);
+    $("finishWorkout").addEventListener("click", requestFinishWorkout);
+    $("finishWorkoutTop").addEventListener("click", requestFinishWorkout);
+    $("dismissFinishConfirm").addEventListener("click", closeFinishConfirm);
+    $("cancelFinishWorkout").addEventListener("click", closeFinishConfirm);
+    $("confirmFinishWorkout").addEventListener("click", () => {
+      closeFinishConfirm();
+      finishWorkout();
+    });
+    $("finishConfirmSheet").addEventListener("click", (event) => {
+      if (event.target === $("finishConfirmSheet")) closeFinishConfirm();
+    });
     $("dockPlan")?.addEventListener("click", openQueueEditMode);
     $("dockRecord")?.addEventListener("click", () => {
       if (!state.lastRecord) return;

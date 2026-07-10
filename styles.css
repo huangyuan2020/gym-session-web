@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
-  --bg: #f4f7f1;
+  --bg: #f3f6f4;
   --surface: #ffffff;
-  --surface-strong: #fdfcf8;
-  --ink: #17211b;
-  --muted: #667067;
-  --line: #d9e0d6;
-  --primary: #1f6f4a;
-  --primary-pressed: #185a3c;
-  --accent: #e4572e;
-  --blue: #285fbd;
-  --gold: #e2a32c;
+  --surface-strong: #f7faf8;
+  --ink: #142019;
+  --muted: #5e6b64;
+  --line: #d7e0db;
+  --primary: #00a86b;
+  --primary-pressed: #008a58;
+  --accent: #ff633f;
+  --blue: #316bff;
+  --gold: #ffc247;
   --shadow: 0 10px 28px rgba(28, 42, 31, 0.1);
   --radius: 8px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -28,9 +28,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(31, 111, 74, 0.08), rgba(244, 247, 241, 0) 260px),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -81,7 +79,7 @@ svg {
   gap: 12px;
   margin: -12px -14px 12px;
   padding: calc(env(safe-area-inset-top) + 12px) 14px 10px;
-  background: rgba(244, 247, 241, 0.92);
+  background: rgba(243, 246, 244, 0.94);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(217, 224, 214, 0.7);
 }
@@ -93,6 +91,27 @@ svg {
   flex: 0 0 auto;
 }
 
+.topbar-elapsed {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 58px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.topbar-elapsed span {
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.topbar-elapsed strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
 .topbar-actions .icon-button {
   width: 38px;
   min-height: 38px;
@@ -102,8 +121,8 @@ svg {
   min-height: 38px;
   border-radius: var(--radius);
   padding: 0 12px;
-  border: 1px solid rgba(31, 111, 74, 0.42);
-  border-color: rgba(31, 111, 74, 0.42);
+  border: 1px solid rgba(0, 168, 107, 0.42);
+  border-color: rgba(0, 168, 107, 0.42);
   background: var(--primary);
   color: #fff;
   font-size: 13px;
@@ -121,7 +140,7 @@ svg {
   width: 38px;
   height: 38px;
   border-radius: var(--radius);
-  box-shadow: 0 4px 14px rgba(31, 111, 74, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 168, 107, 0.22);
   flex: 0 0 auto;
 }
 
@@ -139,40 +158,6 @@ svg {
   gap: 10px;
 }
 
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--line);
-}
-
-.summary-strip > div {
-  min-width: 0;
-  padding: 9px 8px;
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.metric-label {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.summary-strip strong {
-  display: block;
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .current-panel,
 .queue-section,
 .finish-section,
@@ -182,11 +167,38 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 .current-panel {
   padding: 16px;
+}
+
+body[data-phase="work"] .current-panel {
+  border-color: rgba(0, 168, 107, 0.4);
+}
+
+body[data-phase="work"] .topbar-elapsed strong,
+body[data-phase="work"] #mainTimer {
+  color: var(--primary);
+}
+
+body[data-phase="rest"] .current-panel {
+  border-color: rgba(255, 99, 63, 0.48);
+}
+
+body[data-phase="rest"] .topbar-elapsed strong,
+body[data-phase="rest"] #mainTimer {
+  color: var(--accent);
+}
+
+body[data-phase="rest"] #primaryAction {
+  background: var(--accent);
+  box-shadow: 0 8px 18px rgba(255, 99, 63, 0.22);
+}
+
+body[data-phase="rest"] #primaryAction:active {
+  background: #e64f2f;
 }
 
 .panel-kicker,
@@ -284,9 +296,7 @@ h2 {
   min-height: 88px;
   border: 1px solid #cfd9cf;
   border-radius: var(--radius);
-  background:
-    linear-gradient(135deg, rgba(31, 111, 74, 0.1), rgba(226, 163, 44, 0.13)),
-    var(--surface-strong);
+  background: var(--surface-strong);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   font-size: 52px;
@@ -345,7 +355,7 @@ input {
 
 .stepper:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(31, 111, 74, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.16);
 }
 
 .stepper input {
@@ -381,7 +391,7 @@ input {
 input:focus,
 textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(31, 111, 74, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.16);
 }
 
 .action-row {
@@ -457,7 +467,7 @@ textarea:focus {
 .finish-button {
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(31, 111, 74, 0.18);
+  box-shadow: 0 8px 18px rgba(0, 168, 107, 0.2);
 }
 
 .primary-action:active,
@@ -630,7 +640,7 @@ textarea:focus {
 }
 
 .exercise-row.active {
-  border-color: rgba(31, 111, 74, 0.45);
+  border-color: rgba(0, 168, 107, 0.45);
   background: #e6efe8;
   box-shadow: inset 3px 0 0 var(--primary);
 }
@@ -817,7 +827,7 @@ textarea:focus {
 }
 
 .plan-tab.active {
-  border-color: rgba(31, 111, 74, 0.45);
+  border-color: rgba(0, 168, 107, 0.45);
   background: #eaf4ec;
   color: var(--primary);
 }
@@ -839,11 +849,11 @@ textarea:focus {
 }
 
 .queue-section.pick-mode {
-  border-color: rgba(226, 163, 44, 0.55);
+  border-color: var(--line);
 }
 
 .queue-section.pick-mode .exercise-card {
-  background: #fffaf0;
+  background: #fbfcfa;
 }
 
 .queue-section.pick-mode .exercise-row.active .exercise-card {
@@ -864,7 +874,7 @@ textarea:focus {
 }
 
 .record-section {
-  border-color: rgba(31, 111, 74, 0.38);
+  border-color: rgba(0, 168, 107, 0.38);
 }
 
 .data-section {
@@ -1350,6 +1360,18 @@ textarea {
   margin-top: 14px;
 }
 
+.finish-confirm-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.finish-confirm-actions .secondary-action,
+.finish-confirm-actions .primary-action {
+  min-height: 46px;
+}
+
 .plan-save-dialog-actions .plain-button {
   min-height: 40px;
 }
@@ -1400,8 +1422,24 @@ textarea {
 }
 
 @media (max-width: 380px) {
-  .summary-strip strong {
-    font-size: 12px;
+  .topbar {
+    gap: 6px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+
+  .brand-title {
+    display: none;
+  }
+
+  .topbar-elapsed {
+    min-width: 48px;
+  }
+
+  .topbar-actions .finish-top-button {
+    padding-inline: 8px;
   }
 
   h1 {
@@ -1440,18 +1478,43 @@ textarea {
 }
 
 @media (max-width: 679px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body.panel-active {
     overflow: hidden;
   }
 
   .app-shell {
     width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 18px);
   }
 
   .topbar {
+    position: static;
+    flex: 0 0 auto;
     margin: -8px -10px 8px;
     padding: calc(env(safe-area-inset-top) + 8px) 10px 8px;
+  }
+
+  .main-stack {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .current-panel {
+    flex: 0 0 auto;
   }
 
   .brand-mark {
@@ -1461,18 +1524,6 @@ textarea {
 
   .brand-title {
     font-size: 16px;
-  }
-
-  .summary-strip > div {
-    padding: 7px 7px;
-  }
-
-  .metric-label {
-    font-size: 10px;
-  }
-
-  .summary-strip strong {
-    font-size: 13px;
   }
 
   .current-panel {
@@ -1623,8 +1674,12 @@ textarea {
   .queue-section {
     position: static;
     z-index: auto;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
     max-height: none;
-    overflow: auto;
+    overflow: hidden;
     padding: 10px;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -1660,9 +1715,14 @@ textarea {
   }
 
   .exercise-list {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: none;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding-right: 1px;
+    padding-bottom: 2px;
   }
 
   .exercise-row {

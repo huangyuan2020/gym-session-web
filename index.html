@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#1f6f4a" />
+    <meta name="theme-color" content="#00a86b" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="力量记录" />
@@ -21,6 +21,10 @@
           <div>
             <div class="brand-title">力量记录</div>
           </div>
+        </div>
+        <div class="topbar-elapsed" aria-label="训练用时">
+          <span>用时</span>
+          <strong id="sessionElapsed">00:00</strong>
         </div>
         <div class="topbar-actions">
           <button class="icon-button" id="dataToggle" type="button" title="训练数据" aria-label="训练数据">
@@ -43,25 +47,6 @@
       </header>
 
       <main class="main-stack">
-        <section class="summary-strip" aria-label="训练概览">
-          <div>
-            <span class="metric-label">组数</span>
-            <strong id="progressSets">0/0</strong>
-          </div>
-          <div>
-            <span class="metric-label">容量</span>
-            <strong id="progressVolume">0kg</strong>
-          </div>
-          <div>
-            <span class="metric-label">用时</span>
-            <strong id="sessionElapsed">00:00</strong>
-          </div>
-          <div>
-            <span class="metric-label">状态</span>
-            <strong id="phaseLabel">准备</strong>
-          </div>
-        </section>
-
         <section class="current-panel" id="currentPanel" aria-label="当前训练">
           <div class="current-title-row">
             <h1 id="currentName">加载中</h1>
@@ -259,6 +244,26 @@
           <button class="primary-action compact" id="confirmOverwritePlan" type="button">覆盖本计划</button>
           <button class="secondary-action" id="confirmSaveAsPlan" type="button">另存为新计划</button>
           <button class="plain-button" id="skipPlanSave" type="button">暂不保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-backdrop hidden" id="finishConfirmSheet" aria-hidden="true">
+      <div class="sheet finish-confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="finishConfirmTitle">
+        <div class="sheet-grip"></div>
+        <div class="section-heading">
+          <h2 id="finishConfirmTitle">完成训练？</h2>
+          <button class="icon-button" id="dismissFinishConfirm" type="button" title="关闭" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="sheet-copy" id="finishConfirmMessage"></p>
+        <div class="finish-confirm-actions">
+          <button class="secondary-action" id="cancelFinishWorkout" type="button">继续训练</button>
+          <button class="primary-action compact" id="confirmFinishWorkout" type="button">完成并保存</button>
         </div>
       </div>
     </div>

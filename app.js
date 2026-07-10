@@ -319,13 +319,6 @@
     };
   }
 
-  function totalPlannedSets() {
-    return state.session.plan.reduce((sum, exercise) => {
-      const planned = cleanNumber(exercise.sets, 0, true);
-      return sum + Math.max(planned, completedCount(exercise.id));
-    }, 0);
-  }
-
   function totalVolume(sets = state.session.sets) {
     return sets.reduce((sum, set) => sum + cleanNumber(set.actualReps, 0, true) * cleanNumber(set.actualWeight, 0), 0);
   }
@@ -546,6 +539,38 @@
     renderAll();
     renderRecord(record);
     openPanel("record");
+  }
+
+  function remainingPlannedSets() {
+    return state.session.plan.reduce((sum, exercise) => {
+      const planned = cleanNumber(exercise.sets, 0, true);
+      return sum + Math.max(0, planned - completedCount(exercise.id));
+    }, 0);
+  }
+
+  function closeFinishConfirm() {
+    const sheet = $("finishConfirmSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+
+  function requestFinishWorkout() {
+    const remaining = remainingPlannedSets();
+    const isWorking = state.session.phase === "work";
+    if (!remaining && !isWorking) {
+      finishWorkout();
+      return;
+    }
+
+    const afterCurrent = Math.max(0, remaining - (isWorking ? 1 : 0));
+    $("finishConfirmMessage").textContent = isWorking
+      ? afterCurrent
+        ? `当前组会按页面参数保存，之后仍有 ${afterCurrent} 组计划未完成。确定结束本次训练吗？`
+        : "当前组会按页面参数保存并结束本次训练。"
+      : `还有 ${remaining} 组计划未完成，确定结束并生成训练记录吗？`;
+    $("finishConfirmSheet").classList.remove("hidden");
+    $("finishConfirmSheet").setAttribute("aria-hidden", "false");
   }
 
   function buildRecord(session) {
@@ -963,8 +988,8 @@
 
   function renderAll() {
     ensurePointer();
+    document.body.dataset.phase = state.session.phase;
     renderHeader();
-    renderSummary();
     renderCurrent();
     renderNextStrip();
     renderPlanTabs();
@@ -977,20 +1002,6 @@
   }
 
   function renderHeader() {
-  }
-
-  function phaseText() {
-    const phase = state.session.phase;
-    if (phase === "work") return "训练";
-    if (phase === "rest") return "休息";
-    if (phase === "done") return "完成";
-    return "准备";
-  }
-
-  function renderSummary() {
-    $("progressSets").textContent = `${state.session.sets.length}/${totalPlannedSets()}`;
-    $("progressVolume").textContent = `${Math.round(totalVolume() * 10) / 10}kg`;
-    $("phaseLabel").textContent = phaseText();
   }
 
   function renderCurrent() {
@@ -1035,7 +1046,12 @@
     } else if (state.session.phase === "rest") {
       if ($("currentKicker")) $("currentKicker").textContent = "休息中";
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
-      primary.textContent = "下一组";
+      const target = nextTargetInfo();
+      primary.textContent = !target
+        ? "完成训练"
+        : target.isSameExercise
+          ? "下一组"
+          : `下个动作 · ${target.exercise.name}`;
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
@@ -1943,8 +1959,11 @@
         return;
       }
       if (state.session.phase === "work") completeSetToRest();
-      else if (state.session.phase === "rest") beginNextSet();
-      else if (state.session.phase === "done") finishWorkout();
+      else if (state.session.phase === "rest") {
+        if (nextTargetInfo()) beginNextSet();
+        else requestFinishWorkout();
+      }
+      else if (state.session.phase === "done") requestFinishWorkout();
       else startSet();
     });
 
@@ -1953,8 +1972,17 @@
     });
 
     $("undoAction").addEventListener("click", undoLastAction);
-    $("finishWorkout").addEventListener("click", finishWorkout);
-    $("finishWorkoutTop").addEventListener("click", finishWorkout);
+    $("finishWorkout").addEventListener("click", requestFinishWorkout);
+    $("finishWorkoutTop").addEventListener("click", requestFinishWorkout);
+    $("dismissFinishConfirm").addEventListener("click", closeFinishConfirm);
+    $("cancelFinishWorkout").addEventListener("click", closeFinishConfirm);
+    $("confirmFinishWorkout").addEventListener("click", () => {
+      closeFinishConfirm();
+      finishWorkout();
+    });
+    $("finishConfirmSheet").addEventListener("click", (event) => {
+      if (event.target === $("finishConfirmSheet")) closeFinishConfirm();
+    });
     $("dockPlan")?.addEventListener("click", openQueueEditMode);
     $("dockRecord")?.addEventListener("click", () => {
       if (!state.lastRecord) return;
