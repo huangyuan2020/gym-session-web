@@ -1,9 +1,9 @@
-const CACHE_NAME = "gym-session-web-v43";
+const CACHE_NAME = "gym-session-web-v44";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=43",
-  "./app.js?v=43",
+  "./styles.css",
+  "./app.js",
   "./manifest.webmanifest",
   "./app-icon.svg",
 ];
