@@ -13,8 +13,8 @@ const bundled = html
   .replace(/<link rel="icon" href="\.\/app-icon\.svg" type="image\/svg\+xml" \/>\n\s*/u, `<link rel="icon" href="${iconDataUrl}" type="image/svg+xml" />\n    `)
   .replace(/<link rel="manifest" href="\.\/manifest\.webmanifest" \/>\n\s*/u, "")
   .replace(/<link rel="apple-touch-icon" href="\.\/app-icon\.svg" \/>\n\s*/u, `<link rel="apple-touch-icon" href="${iconDataUrl}" />\n    `)
-  .replace(/<link rel="stylesheet" href="\.\/styles\.css" \/>\n\s*/u, `<style>\n${css}\n    </style>\n  `)
+  .replace(/<link rel="stylesheet" href="\.\/styles\.css(?:\?[^"]*)?" \/>\n\s*/u, `<style>\n${css}\n    </style>\n  `)
   .replaceAll('src="./app-icon.svg"', `src="${iconDataUrl}"`)
-  .replace(/<script src="\.\/app\.js" defer><\/script>/u, `<script>\n${js.replaceAll("</script", "<\\/script")}\n    </script>`);
+  .replace(/<script src="\.\/app\.js(?:\?[^"]*)?" defer><\/script>/u, `<script>\n${js.replaceAll("</script", "<\\/script")}\n    </script>`);
 
 writeFileSync(join(root, "phone.html"), bundled);

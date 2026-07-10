@@ -2167,7 +2167,7 @@
     setInterval(updateDynamicTimers, 500);
 
     if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      navigator.serviceWorker.register("./sw.js?v=43", { updateViaCache: "none" }).catch(() => {});
     }
   }
 

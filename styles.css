@@ -1678,13 +1678,13 @@ textarea {
   .queue-section {
     position: static;
     z-index: auto;
-    display: flex;
+    display: block;
     flex: 1 1 0;
-    flex-direction: column;
-    height: 0;
+    height: auto;
     min-height: 0;
     max-height: none;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 10px;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -1721,15 +1721,12 @@ textarea {
 
   .exercise-list {
     display: flex;
-    flex: 1 1 0;
+    flex: none;
     flex-direction: column;
-    height: 0;
+    height: auto;
     min-height: 0;
     max-height: none;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
     padding-right: 1px;
     padding-bottom: 2px;
   }
