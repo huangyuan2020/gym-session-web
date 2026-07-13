@@ -451,8 +451,9 @@
     state.session.lastSetLogId = null;
   }
 
-  function beginNextSet() {
-    pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
+  function beginNextSet(options = {}) {
+    const { automatic = false } = options;
+    if (!automatic) pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
     if (state.session.phase === "rest") finishRest();
 
     const next = findNextAfterCurrent();
@@ -1048,10 +1049,10 @@
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       const target = nextTargetInfo();
       primary.textContent = !target
-        ? "完成训练"
+        ? "跳过休息 · 完成训练"
         : target.isSameExercise
-          ? "下一组"
-          : `下个动作 · ${target.exercise.name}`;
+          ? "跳过休息 · 下一组"
+          : "跳过休息 · 下个动作";
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
@@ -1138,9 +1139,6 @@
         const planned = cleanNumber(exercise.sets, 0, true);
         const isActive = state.session.currentExerciseId === exercise.id;
         const isDone = completed >= planned;
-        const reps = cleanNumber(exercise.reps, 0, true);
-        const weight = cleanNumber(exercise.weight, 0);
-        const rest = cleanNumber(exercise.restSec, 0, true);
         const statusText = isDone ? "完成" : isActive ? "当前" : "待做";
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
@@ -1150,11 +1148,8 @@
             <div class="exercise-card">
               <button class="exercise-main" type="button" data-action="pick">
                 <span class="exercise-status">${statusText}</span>
-                <div class="exercise-title-line">
-                  <div class="exercise-title">${escapeHtml(exercise.name)}</div>
-                  <span class="exercise-badge">${completed}/${planned}</span>
-                </div>
-                <div class="exercise-meta">${reps}次 · ${weight}kg · 休${rest}s</div>
+                <div class="exercise-title">${escapeHtml(exercise.name)}</div>
+                <span class="exercise-badge">${completed}/${planned}</span>
               </button>
             </div>
           </article>
@@ -1813,8 +1808,9 @@
     if (state.session.phase === "rest") {
       const elapsedRest = secondsBetween(state.session.restStartedAt, now);
       const target = cleanNumber(state.session.restTargetSec, 0, true);
-      const remaining = target > 0 ? Math.max(0, target - elapsedRest) : elapsedRest;
+      const remaining = Math.max(0, target - elapsedRest);
       $("mainTimer").textContent = formatClock(remaining);
+      if (remaining === 0) beginNextSet({ automatic: true });
       return;
     }
 

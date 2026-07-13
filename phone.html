@@ -670,7 +670,7 @@ textarea:focus {
 }
 
 .exercise-row.done {
-  opacity: 0.72;
+  opacity: 1;
 }
 
 .exercise-main {
@@ -678,7 +678,6 @@ textarea:focus {
   grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 8px;
-  row-gap: 2px;
   min-width: 0;
   min-height: 44px;
   padding: 0;
@@ -688,7 +687,6 @@ textarea:focus {
 }
 
 .exercise-status {
-  grid-row: 1 / span 2;
   align-self: stretch;
   display: grid;
   place-items: center;
@@ -707,16 +705,8 @@ textarea:focus {
 }
 
 .exercise-row.done .exercise-status {
-  background: #e7ece3;
-  color: #879184;
-}
-
-.exercise-title-line {
-  grid-column: 2 / -1;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
+  background: var(--accent);
+  color: #fff;
 }
 
 .exercise-title {
@@ -733,20 +723,14 @@ textarea:focus {
   line-height: 1.25;
 }
 
-.queue-section .exercise-title-line {
-  align-items: flex-start;
-  gap: 5px;
-}
-
 .queue-section .exercise-badge {
   padding: 2px 6px;
   font-size: 10px;
 }
 
-.queue-section .exercise-meta {
-  grid-column: 2 / -1;
-  font-size: 12px;
-  line-height: 1.2;
+.exercise-row.done .exercise-badge {
+  background: #fff0eb;
+  color: #d94b2a;
 }
 
 .exercise-badge {
@@ -757,13 +741,6 @@ textarea:focus {
   color: var(--primary);
   font-size: 10px;
   font-weight: 850;
-}
-
-.exercise-meta {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 720;
-  line-height: 1.25;
 }
 
 .swipe-actions {
@@ -1432,9 +1409,6 @@ textarea {
     font-size: 15px;
   }
 
-  .queue-section .exercise-meta {
-    font-size: 12px;
-  }
 }
 
 @media (max-width: 380px) {
@@ -1746,16 +1720,16 @@ textarea {
 
   .exercise-row {
     flex: 0 0 auto;
-    min-height: 64px;
+    min-height: 54px;
     padding: 0;
   }
 
   .queue-section .exercise-card {
-    min-height: 62px;
+    min-height: 52px;
   }
 
   .queue-section .exercise-main {
-    min-height: 48px;
+    min-height: 40px;
   }
 
   .row-wide-actions {
@@ -2512,8 +2486,9 @@ textarea {
     state.session.lastSetLogId = null;
   }
 
-  function beginNextSet() {
-    pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
+  function beginNextSet(options = {}) {
+    const { automatic = false } = options;
+    if (!automatic) pushUndo(state.session.phase === "rest" ? "跳过休息" : "下一组");
     if (state.session.phase === "rest") finishRest();
 
     const next = findNextAfterCurrent();
@@ -3109,10 +3084,10 @@ textarea {
       $("currentSetLine").textContent = lastSet ? `第 ${lastSet.setNumber} 组完成` : `第 ${completed} 组完成`;
       const target = nextTargetInfo();
       primary.textContent = !target
-        ? "完成训练"
+        ? "跳过休息 · 完成训练"
         : target.isSameExercise
-          ? "下一组"
-          : `下个动作 · ${target.exercise.name}`;
+          ? "跳过休息 · 下一组"
+          : "跳过休息 · 下个动作";
     } else {
       if ($("currentKicker")) $("currentKicker").textContent = completed > 0 ? "下一组" : "下个动作";
       $("currentSetLine").textContent = `第 ${Math.min(completed + 1, planned)} / ${planned} 组`;
@@ -3199,9 +3174,6 @@ textarea {
         const planned = cleanNumber(exercise.sets, 0, true);
         const isActive = state.session.currentExerciseId === exercise.id;
         const isDone = completed >= planned;
-        const reps = cleanNumber(exercise.reps, 0, true);
-        const weight = cleanNumber(exercise.weight, 0);
-        const rest = cleanNumber(exercise.restSec, 0, true);
         const statusText = isDone ? "完成" : isActive ? "当前" : "待做";
         return `
           <article class="exercise-row ${isActive ? "active" : ""} ${isDone ? "done" : ""}" data-id="${exercise.id}">
@@ -3211,11 +3183,8 @@ textarea {
             <div class="exercise-card">
               <button class="exercise-main" type="button" data-action="pick">
                 <span class="exercise-status">${statusText}</span>
-                <div class="exercise-title-line">
-                  <div class="exercise-title">${escapeHtml(exercise.name)}</div>
-                  <span class="exercise-badge">${completed}/${planned}</span>
-                </div>
-                <div class="exercise-meta">${reps}次 · ${weight}kg · 休${rest}s</div>
+                <div class="exercise-title">${escapeHtml(exercise.name)}</div>
+                <span class="exercise-badge">${completed}/${planned}</span>
               </button>
             </div>
           </article>
@@ -3874,8 +3843,9 @@ textarea {
     if (state.session.phase === "rest") {
       const elapsedRest = secondsBetween(state.session.restStartedAt, now);
       const target = cleanNumber(state.session.restTargetSec, 0, true);
-      const remaining = target > 0 ? Math.max(0, target - elapsedRest) : elapsedRest;
+      const remaining = Math.max(0, target - elapsedRest);
       $("mainTimer").textContent = formatClock(remaining);
+      if (remaining === 0) beginNextSet({ automatic: true });
       return;
     }
 
